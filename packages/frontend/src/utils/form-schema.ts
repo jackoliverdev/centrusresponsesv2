@@ -1,0 +1,67 @@
+import z from 'zod';
+import validator from 'validator';
+
+export const employeeFormSchema = z.object({
+  image: z.string().optional(),
+  firstName: z
+    .string({
+      required_error: 'Name is required',
+    })
+    .min(1, 'Name is required'),
+  lastName: z
+    .string({
+      required_error: 'Name is required',
+    })
+    .min(1, 'Name is required'),
+  email: z
+    .string({
+      required_error: 'Email is required',
+    })
+    .email({
+      message: 'Invalid email',
+    }),
+  phone: z
+    .string({
+      required_error: 'Phone is required',
+    })
+    .refine(validator.isMobilePhone, 'Invalid phone number'),
+  position: z
+    .string({
+      required_error: 'Position is required',
+    })
+    .min(1, 'Position is required'),
+  address: z.string().optional().default(''),
+  tags: z.array(z.object({
+    id: z.number(),
+    name: z.string(),
+    backgroundColor: z.string(),
+    textColor: z.string(),
+  })).optional(),
+  isAdmin: z.boolean().optional(),
+  is_teamleader: z.boolean().optional(),
+  teamlead_id: z.number().nullable().optional(),
+});
+
+export const createUserFormSchema = employeeFormSchema.extend({
+  password: z
+    .string({ required_error: 'Password is required' })
+    .min(8, 'Password must be at least 8 characters')
+    .refine(
+      (password) => /\d/.test(password),
+      'Password must contain at least one number'
+    )
+    .refine(
+      (password) => /[!@#$%^&*(),.?":{}|<>]/.test(password),
+      'Password must contain at least one special character'
+    ),
+  confirmPassword: z.string({ required_error: 'Please confirm your password' }),
+  isAdmin: z.boolean().default(false),
+  is_teamleader: z.boolean().default(false),
+  teamlead_id: z.number().nullable().default(null),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
+});
+
+export type EmployeeFormSchema = z.infer<typeof employeeFormSchema>;
+export type CreateUserFormSchema = z.infer<typeof createUserFormSchema>;

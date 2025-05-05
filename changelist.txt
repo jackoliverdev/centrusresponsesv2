@@ -1,0 +1,1452 @@
+🔄 Centrus App - Change Log
+  
+  📋 Change List
+    [✅] Move log out button higher on mobile
+    [✅] Improve delete folder messaging
+    [✅] Refine chat pin & archive icons size and color
+    [✅] Chat Thread item improvements
+    [✅] Optimise chat frame header
+    [✅] Enhance password security in employee forms
+    [✅] Change default chat tab for team leaders
+    [✅] Improve no tags messaging in new chat modal
+    [✅] Centrus logo goes dashboard
+    [✅] Chat history tab clarity
+    [✅] WhatsApp integration help modal
+    [✅] Chat thread bulk actions
+    [✅] Enhance tag readability in chat interface
+    [✅] Integration help modals
+    [✅] Website crawler functionality
+
+  --- Change Details ---
+
+    📱 Move log out button higher on mobile
+
+      📝 Description
+        🎯 Feature: 
+          The logout button was positioned too low on mobile devices, causing it to be hidden by browser UI elements on some phones. Users reported having trouble finding the logout button because they didn't realize they needed to scroll down.
+        💻 Code: 
+          Changed the spacing in the mobile sidebar drawer to bring the logout button higher up in the visible area and added a distinctive red color to make it more noticeable.
+
+      📂 Files:
+        - `packages/frontend/src/layouts/app/AppLayout/Sidebar.tsx` (modified)
+
+      🔍 Changes:
+          🔴 Old:
+            ```tsx
+            <div className="bg-primary relative text-white p-4 min-h-screen flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between px-2 pb-8">
+                  <Logo className="w-20" />
+                  <div className="flex items-center gap-5">
+                    <Avatar src={user?.image} size={40} />
+                    <button onClick={() => setOpen(false)}>
+                      <CloseOutlined className="text-white" />
+                    </button>
+                  </div>
+                </div>
+                {sidebarItems}
+              </div>
+
+              <span className="mt-auto" />
+
+              {platformSwitchButtons}
+
+              <button
+                className="flex items-center w-full px-4 py-6 pl-6 rounded hover:bg-blue-800"
+                onClick={signOut}
+              >
+                <LogOut className="mr-3 h-5 w-5" />
+                Log out
+              </button>
+            </div>
+            ```
+
+          🟢 New:
+            ```tsx
+            <div className="bg-primary relative text-white p-4 min-h-screen flex flex-col">
+              <div>
+                <div className="flex items-center justify-between px-2 pb-8">
+                  <Logo className="w-20" />
+                  <div className="flex items-center gap-5">
+                    <Avatar src={user?.image} size={40} />
+                    <button onClick={() => setOpen(false)}>
+                      <CloseOutlined className="text-white" />
+                    </button>
+                  </div>
+                </div>
+                {sidebarItems}
+              </div>
+
+              <div className="mt-16">
+                {platformSwitchButtons}
+
+                <button
+                  className="flex items-center w-full px-4 py-6 pl-6 rounded hover:bg-blue-800 text-red-300"
+                  onClick={signOut}
+                >
+                  <LogOut className="mr-3 h-5 w-5" />
+                  Log out
+                </button>
+              </div>
+            </div>
+            ```
+
+    🗑️ Improve delete folder messaging
+
+      📝 Description
+        🎯 Feature: 
+          The delete folder confirmation message was confusing and wordy. Users needed a clearer, more concise explanation of what happens when deleting a folder.
+        💻 Code: 
+          Simplified the message text to be shorter and more direct, making it clear that chats will be preserved when deleting a folder.
+
+      📂 Files:
+        - `packages/frontend/src/components/app/Chat/ThreadFolderItem.tsx` (modified)
+
+      🔍 Changes:
+          🔴 Old:
+            ```tsx
+            <p className="font-medium">
+              This will remove all chats but won&#39;t delete the chats.
+            </p>
+            ```
+
+          🟢 New:
+            ```tsx
+            <p className="font-medium">
+              This will not delete your chats.
+            </p>
+            ```
+
+    🎨 Refine chat pin & archive icons size and color
+
+      📝 Description
+        🎯 Feature: 
+          The pin and archive icons in the chat list were too large and too dark, making them visually overpowering. The icons needed to be more subtle and consistent with the chat title's styling.
+        💻 Code: 
+          Reduced the icons' size slightly and updated their colors to match the gray color scheme used by the chat titles. Icons now use text-gray-600 by default with text-gray-800 on hover, while maintaining the blue highlight for active states.
+
+      📂 Files:
+        - `packages/frontend/src/components/app/Chat/Thread.tsx` (modified)
+
+      🔍 Changes:
+          🔴 Old:
+            ```tsx
+            <ArchiveIcon
+              className={twMerge(
+                "h-3 w-3 lg:h-4 lg:w-4",
+                isArchived && "text-blue-600",
+              )}
+            />
+            ```
+
+            ```tsx
+            <Pin
+              className={twMerge(
+                "h-3 w-3 lg:h-4 lg:w-4",
+                isThreadPinned && "fill-current text-blue-600",
+              )}
+            />
+            ```
+
+            ```tsx
+            <ChevronUpIcon className="h-3 w-3 lg:h-4 lg:w-4" />
+            ```
+
+          🟢 New:
+            ```tsx
+            <ArchiveIcon
+              className={twMerge(
+                "h-2.5 w-2.5 lg:h-3.5 lg:w-3.5 text-gray-600 hover:text-gray-800",
+                isArchived && "text-blue-600",
+              )}
+            />
+            ```
+
+            ```tsx
+            <Pin
+              className={twMerge(
+                "h-2.5 w-2.5 lg:h-3.5 lg:w-3.5 text-gray-600 hover:text-gray-800",
+                isThreadPinned && "fill-current text-blue-600",
+              )}
+            />
+            ```
+
+            ```tsx
+            <ChevronUpIcon className="h-2.5 w-2.5 lg:h-3.5 lg:w-3.5 text-gray-600 hover:text-gray-800" />
+            ```
+
+    💬 Chat Thread item improvements
+
+      📝 Description
+        🎯 Feature: 
+          The chat thread items needed refinement in terms of spacing, sizing, and behavior. Two main improvements were needed: 1) Optimize overall spacing and sizing for better layout, and 2) Fix the "Double click to rename" functionality to only apply to the actual chat title text rather than the entire row.
+        💻 Code: 
+          Improved the spacing and sizing of elements in the chat thread item for a more compact and clean layout. Modified the EditableDiv component to limit the double-click rename functionality to just the text content, providing a visual hover indicator on the text itself.
+
+      📂 Files:
+        - `packages/frontend/src/components/app/Chat/Thread.tsx` (modified)
+        - `packages/frontend/src/components/ui/editable-div.tsx` (modified)
+
+      🔍 Changes:
+          🔴 Old Thread.tsx (layout and spacing):
+            ```tsx
+            <div
+              className={twMerge(
+                "relative w-full text-left flex items-stretch p-2 border-b border-gray-200",
+                // other classes...
+              )}
+            >
+              {/* ... */}
+              <Avatar className="h-10 w-10 shrink-0" src={user?.image} />
+              <div className="ml-3 flex-1 flex flex-col min-w-0">
+                <div className="flex justify-between items-baseline gap-2">
+                  <span className="font-semibold truncate">{getUserLabel(user)}</span>
+                  {/* ... */}
+                </div>
+                <EditableDiv
+                  text={name}
+                  onEdit={editName}
+                  onChangeMode={setNameMode}
+                  classNames={{
+                    text: "font-semibold text-gray-600 hover:text-gray-800 mb-1",
+                    input: "mb-1",
+                  }}
+                  isLoading={isUpdatingChat}
+                />
+                <p className="text-xs text-gray-500 truncate w-full min-w-0 flex-1">
+                  {last_message}
+                </p>
+              </div>
+            </div>
+            ```
+
+          🟢 New Thread.tsx (layout and spacing):
+            ```tsx
+            <div
+              className={twMerge(
+                "relative w-full text-left flex items-center p-1.5 border-b border-gray-200",
+                // other classes...
+              )}
+            >
+              {/* ... */}
+              <Avatar className="h-9 w-9 shrink-0" src={user?.image} />
+              <div className="ml-2.5 flex-1 flex flex-col min-w-0">
+                <div className="flex justify-between items-center gap-2">
+                  <span className="text-sm font-semibold truncate text-gray-800">{getUserLabel(user)}</span>
+                  {/* ... */}
+                </div>
+                <div className="truncate w-full">
+                  <EditableDiv
+                    text={name}
+                    onEdit={editName}
+                    onChangeMode={setNameMode}
+                    classNames={{
+                      text: "font-medium text-gray-700 hover:text-gray-800 text-[13px] leading-tight",
+                      input: "text-[13px]",
+                    }}
+                    isLoading={isUpdatingChat}
+                  />
+                </div>
+                <p className="text-[11px] text-gray-500 truncate w-full min-w-0 leading-snug mt-0.5">
+                  {last_message}
+                </p>
+              </div>
+            </div>
+            ```
+
+          🔴 Old editable-div.tsx (double-click behavior):
+            ```tsx
+            <div
+              onDoubleClick={handleDoubleClick}
+              onClick={(e) => e.stopPropagation()}
+              className={twMerge("cursor-text truncate w-full", classNames?.text)}
+              title="Double click to rename"
+            >
+              {isLoading ? editedText : text}
+            </div>
+            ```
+
+          🟢 New editable-div.tsx (double-click behavior):
+            ```tsx
+            <div
+              onDoubleClick={handleDoubleClick}
+              onClick={(e) => e.stopPropagation()}
+              className={twMerge(
+                "cursor-text inline max-w-full hover:bg-gray-100/50 rounded px-0.5 -mx-0.5",
+                classNames?.text
+              )}
+              title="Double click to rename"
+            >
+              {isLoading ? editedText : text}
+            </div>
+            ```
+
+    🖼️ Optimise chat frame header
+
+      📝 Description
+        🎯 Feature: 
+          The chat frame header was taking up too much vertical space and had inconsistent sizing and spacing. The elements needed to be more compact while maintaining readability.
+        💻 Code: 
+          Refined the sizing and spacing of elements in the chat header to create a more compact layout with better visual hierarchy. Reduced the avatar size, adjusted text sizes and colors, and improved spacing between elements.
+
+      📂 Files:
+        - `packages/frontend/src/layouts/app/ChatLayout/Chat.tsx` (modified)
+
+      🔍 Changes:
+          🔴 Old:
+            ```tsx
+            <div className="bg-white border-b border-gray-200 p-4 flex items-center justify-between flex-wrap relative">
+              <div className="flex items-start">
+                <button className="block lg:hidden" onClick={onBack}>
+                  <ChevronLeft className="text-neutral-400" />
+                </button>
+                <Avatar
+                  className="h-10 w-10 shrink-0 bg-blue-950"
+                  src="/images/logo-blue-bg.png"
+                />
+                <div className="ml-3">
+                  <h2 className="font-semibold">
+                    {!!thread?.user && getUserLabel(thread?.user)}
+                  </h2>
+                  <div className="font-medium text-gray-500 mb-1">
+                    {thread?.name}
+                  </div>
+                  {lastMessage?.timestamp && (
+                    <p className="text-sm text-gray-500">
+                      last message sent:{" "}
+                      {formatDistance(lastMessage.timestamp, new Date(), {
+                        addSuffix: true,
+                      })}
+                    </p>
+                  )}
+                </div>
+              </div>
+            ```
+
+          🟢 New:
+            ```tsx
+            <div className="bg-white border-b border-gray-200 p-3 flex items-center justify-between flex-wrap relative">
+              <div className="flex items-start">
+                <button className="block lg:hidden" onClick={onBack}>
+                  <ChevronLeft className="text-neutral-400" />
+                </button>
+                <Avatar
+                  className="h-9 w-9 shrink-0 bg-blue-950"
+                  src="/images/logo-blue-bg.png"
+                />
+                <div className="ml-2.5">
+                  <h2 className="font-semibold text-sm">
+                    {!!thread?.user && getUserLabel(thread?.user)}
+                  </h2>
+                  <div className="font-medium text-gray-600 text-xs mb-0.5">
+                    {thread?.name}
+                  </div>
+                  {lastMessage?.timestamp && (
+                    <p className="text-xs text-gray-400 leading-tight">
+                      last message sent:{" "}
+                      {formatDistance(lastMessage.timestamp, new Date(), {
+                        addSuffix: true,
+                      })}
+                    </p>
+                  )}
+                </div>
+              </div>
+            ```
+
+    🔐 Enhance password security in employee forms
+
+      📝 Description
+        🎯 Feature: 
+          The employee creation form needed enhanced password security features to ensure users create strong passwords and to reduce input errors. The existing simple password field lacked validation and visual feedback.
+        💻 Code: 
+          Implemented a comprehensive password security system with strength indicators, toggle visibility, and validation rules. Created reusable components that provide real-time feedback on password strength and match validation.
+
+      📂 Files:
+        - `packages/frontend/src/components/app/AddEmployee/index.tsx` (modified)
+        - `packages/frontend/src/utils/form-schema.ts` (modified)
+        - `packages/frontend/src/hooks/form/usePasswordStrength.ts` (new)
+        - `packages/frontend/src/components/app/AddEmployee/PasswordStrengthIndicator.tsx` (new)
+
+      🔍 Changes:
+          🔴 Old form-schema.ts:
+            ```tsx
+            export const createUserFormSchema = employeeFormSchema.extend({
+              password: z
+                .string({ required_error: 'Password is required' })
+                .min(8, 'Password must be at least 8 characters'),
+              isAdmin: z.boolean().default(false),
+              is_teamleader: z.boolean().default(false),
+              teamlead_id: z.number().nullable().default(null),
+            });
+            ```
+
+          🟢 New form-schema.ts:
+            ```tsx
+            export const createUserFormSchema = employeeFormSchema.extend({
+              password: z
+                .string({ required_error: 'Password is required' })
+                .min(8, 'Password must be at least 8 characters')
+                .refine(
+                  (password) => /\d/.test(password),
+                  'Password must contain at least one number'
+                )
+                .refine(
+                  (password) => /[!@#$%^&*(),.?":{}|<>]/.test(password),
+                  'Password must contain at least one special character'
+                ),
+              confirmPassword: z.string({ required_error: 'Please confirm your password' }),
+              isAdmin: z.boolean().default(false),
+              is_teamleader: z.boolean().default(false),
+              teamlead_id: z.number().nullable().default(null),
+            }).refine((data) => data.password === data.confirmPassword, {
+              message: "Passwords don't match",
+              path: ["confirmPassword"],
+            });
+            ```
+
+          🔴 Old AddEmployee password field:
+            ```tsx
+            <FormField
+              control={control}
+              name="password"
+              render={({ field }) => (
+                <AntForm.Item name={field.name} label="Password">
+                  <FormItem>
+                    <FormControl>
+                      <Input
+                        placeholder="Enter password"
+                        className="h-12 rounded-lg"
+                        type="password"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                </AntForm.Item>
+              )}
+            />
+            ```
+
+          🟢 New AddEmployee password fields:
+            ```tsx
+            <FormField
+              control={control}
+              name="password"
+              render={({ field }) => (
+                <AntForm.Item name={field.name} label="Password">
+                  <FormItem>
+                    <FormControl>
+                      <Input.Password
+                        placeholder="Enter password"
+                        className="h-12 rounded-lg"
+                        iconRender={(visible) => 
+                          visible ? <EyeOutlined /> : <EyeInvisibleOutlined />
+                        }
+                        onFocus={() => setIsPasswordFieldFocused(true)}
+                        onBlur={(e) => {
+                          setIsPasswordFieldFocused(false);
+                          field.onBlur();
+                        }}
+                        onChange={(e) => {
+                          field.onChange(e);
+                          updatePassword(e.target.value);
+                        }}
+                        value={field.value}
+                        name={field.name}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                </AntForm.Item>
+              )}
+            />
+
+            <FormField
+              control={control}
+              name="confirmPassword"
+              render={({ field }) => (
+                <AntForm.Item name={field.name} label="Confirm Password">
+                  <FormItem>
+                    <FormControl>
+                      <Input.Password
+                        placeholder="Confirm your password"
+                        className="h-12 rounded-lg"
+                        iconRender={(visible) => 
+                          visible ? <EyeOutlined /> : <EyeInvisibleOutlined />
+                        }
+                        onFocus={() => setIsPasswordFieldFocused(true)}
+                        onBlur={(e) => {
+                          setIsPasswordFieldFocused(false);
+                          field.onBlur();
+                        }}
+                        value={field.value}
+                        onChange={field.onChange}
+                        name={field.name}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                </AntForm.Item>
+              )}
+            />
+
+            <PasswordStrengthIndicator
+              strength={strength}
+              strengthLevel={strengthLevel}
+              visible={isPasswordFieldFocused}
+            />
+            ```
+
+    🔄 Change default chat tab for team leaders
+
+      📝 Description
+        🎯 Feature: 
+          For team leader users, the chat interface was defaulting to the "All" tab, which shows both personal and team chats together. This created a cluttered view and required users to manually switch to the "Personal" tab when they wanted to focus on their own conversations.
+        💻 Code: 
+          Modified the initial tab selection in the ChatLayout component to default to "Personal" instead of "All" for team leaders, providing a more relevant starting view while maintaining the ability to switch to "All" or "Team" views as needed.
+
+      📂 Files:
+        - `packages/frontend/src/layouts/app/ChatLayout/ChatLayout.tsx` (modified)
+
+      🔍 Changes:
+          🔴 Old:
+            ```tsx
+            const [selectedTab, setSelectedTab] = useState("All");
+
+            // Later in the component:
+            {currentUser?.is_teamleader && (
+              <Tabs
+                defaultActiveKey="All"
+                onChange={setSelectedTab}
+                items={["All", "Personal", "Team"].map((key) => ({
+                  key,
+                  label: key,
+                }))}
+              />
+            )}
+            ```
+
+          🟢 New:
+            ```tsx
+            const [selectedTab, setSelectedTab] = useState(currentUser?.is_teamleader ? "Personal" : "All");
+
+            // Later in the component:
+            {currentUser?.is_teamleader && (
+              <Tabs
+                defaultActiveKey="Personal"
+                onChange={setSelectedTab}
+                items={["All", "Personal", "Team"].map((key) => ({
+                  key,
+                  label: key,
+                }))}
+              />
+            )}
+            ```
+
+    💬 Improve no tags messaging in new chat modal
+
+      📝 Description
+        🎯 Feature: 
+          Users without tags couldn't start new chats, but the existing message simply said "You do not have any tags" without providing any guidance on how to resolve the issue. Admin users needed clearer instructions to add tags, while regular users needed to know who to contact.
+        💻 Code: 
+          Modified the "no tags" message in the New Chat modal to be role-specific: admin users now see a link to the edit users page where they can apply tags, while regular users are instructed to contact an admin to get tags applied to their account.
+
+      📂 Files:
+        - `packages/frontend/src/layouts/app/ChatLayout/NewChatButton.tsx` (modified)
+
+      🔍 Changes:
+          🔴 Old:
+            ```tsx
+            {tags.length === 0 && <div>You do not have any tags</div>}
+            ```
+
+          🟢 New:
+            ```tsx
+            {tags.length === 0 && (
+              <div className="text-gray-700 py-4">
+                {isOrgAdmin ? (
+                  <p>
+                    You do not have any tags.{' '}
+                    <Link href={USER_APP_ROUTES.getPath('users')} className="text-blue-600 hover:underline">
+                      Apply tags here
+                    </Link>{' '}
+                    to start creating chats.
+                  </p>
+                ) : (
+                  <p>
+                    You do not have any tags. Please ask an admin user to apply tags to your account.
+                  </p>
+                )}
+              </div>
+            )}
+            ```
+        
+    🔗 Centrus logo goes dashboard
+
+      📝 Description
+        🎯 Feature: 
+          The Centrus logo in the header and sidebar was static, not providing an intuitive way for users to return to the dashboard. Users had to specifically click on the Dashboard navigation item to get back to the main screen.
+        💻 Code: 
+          Modified both mobile and desktop versions of the navigation to make the Centrus logo clickable, linking directly to the dashboard page. Added an extra usability improvement on mobile: if the user is already on the dashboard page, clicking the logo in the sidebar menu will close the menu, providing a quick way to return to the content.
+
+      📂 Files:
+        - `packages/frontend/src/layouts/app/AppLayout/Sidebar.tsx` (modified)
+
+      🔍 Changes:
+          🔴 Old:
+            ```tsx
+            <div className="flex items-center mb-10">
+              <Logo
+                className={twMerge("h-10", collapsed && "mx-auto")}
+                iconOnly={collapsed}
+              />
+            </div>
+            ```
+
+            ```tsx
+            <div className="lg:hidden bg-primary flex items-center justify-between py-4 px-6">
+              <Logo className="w-20" />
+              <div className="flex items-center gap-5">
+                <Avatar src={user?.image} size={40} />
+                <button onClick={() => setOpen(true)}>
+                  <MenuOutlined className="text-white" />
+                </button>
+              </div>
+            </div>
+            ```
+
+          🟢 New:
+            ```tsx
+            <div className="flex items-center mb-10">
+              <Link href={USER_APP_ROUTES.getPath('dashboard')}>
+                <Logo
+                  className={twMerge("h-10", collapsed && "mx-auto")}
+                  iconOnly={collapsed}
+                />
+              </Link>
+            </div>
+            ```
+
+            ```tsx
+            <div className="lg:hidden bg-primary flex items-center justify-between py-4 px-6">
+              <Link 
+                href={USER_APP_ROUTES.getPath('dashboard')}
+                onClick={() => {
+                  if (currentItemId === 'dashboard') {
+                    setOpen(false);
+                  }
+                }}
+              >
+                <Logo className="w-20" />
+              </Link>
+              <div className="flex items-center gap-5">
+                <Avatar src={user?.image} size={40} />
+                <button onClick={() => setOpen(true)}>
+                  <MenuOutlined className="text-white" />
+                </button>
+              </div>
+            </div>
+            ```
+
+    🗂️ Chat history tab clarity
+
+      📝 Description
+        🎯 Feature: 
+          Users, especially team leaders, found it unclear what each tab represented in the chat history view. The tabs labeled "All", "Personal", and "Team" didn't provide enough context about what content would be displayed under each selection.
+        💻 Code: 
+          Added explanatory text directly below the tabs that dynamically changes based on the selected tab. The text provides a clear description of what each tab displays, making it easier for users to understand the filtering options. Applied custom styling to reduce the spacing between tabs and the explanatory text for a more compact, integrated appearance.
+
+      📂 Files:
+        - `packages/frontend/src/layouts/app/ChatLayout/ChatLayout.tsx` (modified)
+
+      🔍 Changes:
+          🔴 Old:
+            ```tsx
+            {currentUser?.is_teamleader && (
+              <Tabs
+                defaultActiveKey="Personal"
+                onChange={setSelectedTab}
+                items={["All", "Personal", "Team"].map((key) => ({
+                  key,
+                  label: key,
+                }))}
+              />
+            )}
+            ```
+
+          🟢 New:
+            ```tsx
+            {currentUser?.is_teamleader && (
+              <>
+                <div className="-mb-4">
+                  <Tabs
+                    defaultActiveKey="Personal"
+                    onChange={setSelectedTab}
+                    items={["All", "Personal", "Team"].map((key) => ({
+                      key,
+                      label: key,
+                    }))}
+                  />
+                </div>
+                <div className="text-xs text-gray-500 px-3 py-0 mt-1.5 mb-1.5">
+                  {selectedTab === "All" && "Yours and your team members chats"}
+                  {selectedTab === "Personal" && "Chats you've created"}
+                  {selectedTab === "Team" && "Chats created by your team members"}
+                </div>
+              </>
+            )}
+            ```
+
+    🔄 WhatsApp integration help modal
+
+      📝 Description
+        🎯 Feature: 
+          Users needed clear instructions on how to use WhatsApp with Centrus. Adding a help modal provides users with step-by-step guidance on setting up and using WhatsApp integration.
+        💻 Code: 
+          Implemented an info button with modal dialog that clearly explains the WhatsApp setup process, including adding contacts, ensuring proper country codes, and special commands. The modal is fully responsive on both desktop and mobile.
+
+      📂 Files:
+        - `packages/frontend/src/layouts/app/IntegrationsLayout/WhatsappIntegration.tsx` (modified)
+
+      🔍 Changes:
+          🔴 Old:
+            ```tsx
+            import { FunctionComponent } from 'react';
+            import { Heading } from './Heading';
+            import { WhatsAppOutlined } from '@ant-design/icons';
+
+            export type WhatsappIntegrationProps = object;
+
+            export const WhatsappIntegration: FunctionComponent<
+              WhatsappIntegrationProps
+            > = () => {
+              return (
+                <div>
+                  <Heading>
+                    <WhatsAppOutlined className="text-green-600" /> WhatsApp
+                  </Heading>
+                  <div className="text-2xl">+44 7462 836662</div>
+                </div>
+              );
+            };
+            ```
+
+          🟢 New:
+            ```tsx
+            import { FunctionComponent, useState } from 'react';
+            import { Heading } from './Heading';
+            import { WhatsAppOutlined, InfoCircleOutlined } from '@ant-design/icons';
+            import { Modal, Button } from 'antd';
+            import Link from 'next/link';
+            import { USER_APP_ROUTES } from '@/routing/routes';
+
+            export type WhatsappIntegrationProps = object;
+
+            export const WhatsappIntegration: FunctionComponent<
+              WhatsappIntegrationProps
+            > = () => {
+              const [infoVisible, setInfoVisible] = useState(false);
+              
+              const showInfo = () => {
+                setInfoVisible(true);
+              };
+
+              const hideInfo = () => {
+                setInfoVisible(false);
+              };
+              
+              return (
+                <div className="relative">
+                  <div className="flex items-center justify-between">
+                    <Heading>
+                      <WhatsAppOutlined className="text-green-600" /> WhatsApp
+                    </Heading>
+                    <div className="flex items-center">
+                      <InfoCircleOutlined 
+                        className="text-blue-500 text-lg cursor-pointer" 
+                        onClick={showInfo}
+                      />
+                    </div>
+                  </div>
+                  <div className="text-2xl">+44 7462 836662</div>
+                  
+                  <Modal
+                    title="How to use WhatsApp with Centrus"
+                    open={infoVisible}
+                    onCancel={hideInfo}
+                    width={600}
+                    footer={[
+                      <Button key="close" onClick={hideInfo}>
+                        Close
+                      </Button>,
+                    ]}
+                  >
+                    {/* Modal content with setup instructions */}
+                  </Modal>
+                </div>
+              );
+            };
+            ```
+
+    🔄 Chat thread bulk actions
+
+      📝 Description
+        🎯 Feature: 
+          Added multi-select functionality to chat threads with bulk actions for better thread management. Users can now perform actions like pinning, archiving, and folder assignment on multiple threads at once, similar to the document management functionality. Also fixed issues with tag colors in folders and added protection against duplicate folder assignments to prevent threads from being added to the same folder multiple times.
+        💻 Code: 
+          Implemented a streamlined selection mode UI with checkboxes for chat threads and a consolidated dropdown menu for bulk actions. Created new reusable hooks for handling bulk operations: useBulkPinThreads, useBulkUnpinThreads, and useBulkUpdateChat for archiving/unarchiving. Fixed tag rendering in folders by replacing a generic styled span with the proper DataAccessTag component. Added safeguards at both frontend and backend levels to prevent duplicate folder assignments, with informative messages when threads are already in the selected folder. The UI includes smart validation to prevent unnecessary API calls and provides appropriate feedback messages with thread counts.
+
+      📂 Files:
+        - `packages/frontend/src/layouts/app/ChatLayout/ChatLayout.tsx` (modified)
+        - `packages/frontend/src/components/app/Chat/Thread.tsx` (modified)
+        - `packages/frontend/src/components/app/Chat/FolderThreadPreview.tsx` (modified)
+        - `packages/frontend/src/hooks/chat/useBulkPinThreads.tsx` (new)
+        - `packages/frontend/src/hooks/chat/useBulkUnpinThreads.tsx` (new)
+        - `packages/frontend/src/hooks/chat/useBulkUpdateChat.tsx` (new)
+        - `packages/frontend/src/hooks/chat/useBulkAttachThreadToFolder.tsx` (new)
+        - `packages/backend/src/thread/thread.service.ts` (modified)
+
+      🔍 Changes:
+          🟢 New features:
+            - Select/deselect all threads functionality
+            - Compact dropdown menu for all bulk actions
+            - Bulk add to folder with nested menu options
+            - Bulk pin/unpin threads
+            - Bulk archive/unarchive threads
+            - Smart validation preventing unnecessary API calls
+            - Protection against duplicate folder assignments
+            - Context-aware UI adapting to current view mode
+            - Selection UI only visible on Personal tab for team leaders
+            - Status indicators and loading states for all operations
+            
+          🟢 UI enhancements:
+            - Redesigned the bulk actions section with a cleaner, more intuitive interface
+            - Improved "Bulk Actions" section positioned between folders and filters for better visibility
+            - One-line compact layout in both rest and active states for better space efficiency
+            - Added visual hierarchy with user-friendly styling that matches Folders section
+            - Subtly styled "Select Multiple" button with a light blue color that's on-brand but not overwhelming
+            - Improved icon alignment in dropdown menu for better visual consistency
+            - Clear "Selected: X" counter with blue highlight in selection mode
+            - Red cancel button for better visibility and action clarity
+            - XCircleIcon added for the "Unpin" option for better visual cues
+            
+          🟢 User experience enhancements:
+            - Clean, space-efficient interface that fits on a single line
+            - Visual feedback for selected items with blue highlight
+            - Streamlined "Actions" dropdown to consolidate all bulk operations
+            - Thread count in success messages (e.g., "2 threads pinned")
+            - Cancel button to exit selection mode
+            - Fits well on both desktop and mobile interfaces
+            - Automatic reset of selection after actions complete
+            - Consistent tag styling in both main view and folders view
+            - Helpful messages when threads are already in a folder
+
+    🔖 Enhance tag readability in chat interface
+
+      📝 Description
+        🎯 Feature: 
+          Improved the readability of tag labels throughout the chat interface by increasing font sizes while maintaining the compact visual appearance of the tags. This enhances the visibility of important context information without disrupting the overall layout.
+        💻 Code: 
+          Modified the core DataAccessTag component to properly handle font sizing while maintaining its compact height. Used line-height adjustments and padding optimizations to keep the tags visually consistent while accommodating larger text. Updated font sizes in all instances of tags across the chat interface components.
+
+      📂 Files:
+        - `packages/frontend/src/components/app/DataAccessTag.tsx` (modified)
+        - `packages/frontend/src/components/app/Chat/Thread.tsx` (modified)
+        - `packages/frontend/src/components/app/Chat/FolderThreadPreview.tsx` (modified)
+        - `packages/frontend/src/layouts/app/ChatLayout/Chat.tsx` (modified)
+
+      🔍 Changes:
+          🔴 Old DataAccessTag styling:
+            ```tsx
+            <Tag
+              bordered={false}
+              className={twMerge("text-base inline-flex items-center w-fit", className)}
+              color={tag.backgroundColor}
+              style={{
+                color: tag.textColor,
+                backgroundColor: tag.backgroundColor,
+              }}
+              {...props}
+            >
+              {tag.name}
+            </Tag>
+            ```
+
+          🟢 New DataAccessTag styling:
+            ```tsx
+            <Tag
+              bordered={false}
+              className={twMerge("text-base inline-flex items-center py-0 leading-tight h-auto", className)}
+              color={tag.backgroundColor}
+              style={{
+                color: tag.textColor,
+                backgroundColor: tag.backgroundColor,
+                fontSize: "inherit",
+                lineHeight: 1,
+              }}
+              {...props}
+            >
+              {tag.name}
+            </Tag>
+            ```
+          
+          🟢 Font size improvements:
+            - Thread list: Increased from text-[9px]/text-[10px] to text-[10px]/text-[11px]
+            - Folder preview: Increased from text-[10px] to text-[11px]
+            - Chat header: Increased to text-[11px]/text-[12px]
+            - Removed redundant duplicate tag in chat header
+
+    🔄 Integration help modals
+
+      📝 Description
+        🎯 Feature: 
+          Added information modals to Google Drive and Microsoft Teams integrations to help users understand how to use these features effectively. Similar to the WhatsApp integration help modal, these provide clear instructions and guidance for connecting and using these integrations with Centrus.
+        💻 Code: 
+          Implemented info buttons with modal dialogs for both integration components. Each modal contains integration-specific instructions, explaining the connection process, data handling, and best practices. The modals appear in both connected and disconnected states, with content tailored to each state.
+
+      📂 Files:
+        - `packages/frontend/src/layouts/app/TrainLayout/ConnectGoogleDrive.tsx` (modified)
+        - `packages/frontend/src/layouts/app/TrainLayout/ConnectMicrosoftTeams.tsx` (modified)
+
+      🔍 Changes:
+        🔴 Old Google Drive integration:
+            ```tsx
+            import { FunctionComponent, useMemo, useState } from 'react';
+            import { IntegrationContainer } from './IntegrationContainer';
+            import { Button, Tree } from 'antd';
+            import {
+              DeleteOutlined,
+              FolderOutlined,
+              SyncOutlined,
+            } from '@ant-design/icons';
+            // other imports...
+
+            export const ConnectGoogleDrive: FunctionComponent<
+              ConnectGoogleDriveProps
+            > = () => {
+              // State and hooks...
+
+              // When connected
+              if (organization?.google_token)
+                return (
+                  <IntegrationContainer>
+                    <div className="flex items-center gap-4">
+                      <GoogleDrive className="size-6" />
+                      <div className="text-xl font-semibold">Google Drive</div>
+                    </div>
+                    {/* Tree and buttons... */}
+                  </IntegrationContainer>
+                );
+              // When not connected
+              return (
+                <>
+                  <IntegrationContainer as="button" onClick={() => googleAuth()}>
+                    <GoogleDrive />
+                    <div className="font-bold">Connect Google Drive</div>
+                  </IntegrationContainer>
+                </>
+              );
+            };
+            ```
+
+        🟢 New Google Drive integration:
+            ```tsx
+            import { FunctionComponent, useMemo, useState } from 'react';
+            import { IntegrationContainer } from './IntegrationContainer';
+            import { Button, Tree, Modal } from 'antd';
+            import {
+              DeleteOutlined,
+              FolderOutlined,
+              SyncOutlined,
+              InfoCircleOutlined,
+            } from '@ant-design/icons';
+            // other imports...
+            import Link from 'next/link';
+            import { USER_APP_ROUTES } from '@/routing/routes';
+
+            export const ConnectGoogleDrive: FunctionComponent<
+              ConnectGoogleDriveProps
+            > = () => {
+              // State and hooks...
+              const [infoVisible, setInfoVisible] = useState(false);
+              
+              const showInfo = () => {
+                setInfoVisible(true);
+              };
+
+              const hideInfo = () => {
+                setInfoVisible(false);
+              };
+
+              // When connected
+              if (organization?.google_token)
+                return (
+                  <IntegrationContainer>
+                    <div className="flex items-center gap-4">
+                      <GoogleDrive className="size-6" />
+                      <div className="text-xl font-semibold">Google Drive</div>
+                      <InfoCircleOutlined 
+                        className="text-blue-500 text-lg cursor-pointer" 
+                        onClick={showInfo}
+                      />
+                    </div>
+                    {/* Tree and buttons... */}
+                    
+                    <Modal
+                      title="How to use Google Drive with Centrus"
+                      open={infoVisible}
+                      onCancel={hideInfo}
+                      width={600}
+                      footer={[
+                        <Button key="close" onClick={hideInfo}>
+                          Close
+                        </Button>,
+                      ]}
+                    >
+                      <div className="text-sm mb-4">
+                        <ol className="list-decimal pl-4 my-3 space-y-2">
+                          <li>Select specific folders from your Google Drive that contain documents you want to use</li>
+                          <li>Click "Sync" to import those documents into Centrus</li>
+                          <li>Your documents will become available for AI to reference during conversations</li>
+                          <li>Resync your folder whenever you add new documents you want Centrus to access</li>
+                          <li>All document types including Google Docs, Sheets, PDFs and Office files are supported</li>
+                        </ol>
+                        {/* More help content... */}
+                      </div>
+                    </Modal>
+                  </IntegrationContainer>
+                );
+              // When not connected
+              return (
+                <>
+                  <IntegrationContainer as="button" onClick={() => googleAuth()}>
+                    <div className="flex items-center gap-2">
+                      <GoogleDrive />
+                      <div className="font-bold">Connect Google Drive</div>
+                      <InfoCircleOutlined 
+                        className="text-blue-500 ml-auto cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          showInfo();
+                        }}
+                      />
+                    </div>
+                  </IntegrationContainer>
+                  
+                  <Modal
+                    title="How to use Google Drive with Centrus"
+                    open={infoVisible}
+                    onCancel={hideInfo}
+                    width={600}
+                    footer={[
+                      <Button key="close" onClick={hideInfo}>
+                        Close
+                      </Button>,
+                    ]}
+                  >
+                    {/* Modal content for disconnected state... */}
+                  </Modal>
+                </>
+              );
+            };
+            ```
+
+        🔴 Old Microsoft Teams integration:
+            ```tsx
+            import { FunctionComponent, useCallback, useState } from 'react';
+            import { IntegrationContainer } from './IntegrationContainer';
+            import { Button, Checkbox } from 'antd';
+            import { DeleteOutlined, SyncOutlined } from '@ant-design/icons';
+            // other imports...
+
+            export const ConnectMicrosoftTeams: FunctionComponent<
+              ConnectMicrosoftTeams
+            > = () => {
+              // State and hooks...
+
+              // When connected
+              if (organization?.microsoft_token)
+                return (
+                  <IntegrationContainer>
+                    <div className="flex items-center gap-4">
+                      <MicrosoftTeams className="size-6" />
+                      <div className="text-xl font-semibold">Microsoft Teams Chat</div>
+                    </div>
+                    {/* Channels selection and buttons... */}
+                  </IntegrationContainer>
+                );
+              // When not connected
+              return (
+                <>
+                  <IntegrationContainer as="button" onClick={() => microsoftAuth()}>
+                    <MicrosoftTeams />
+                    <div className="font-bold">Connect Microsoft Teams</div>
+                  </IntegrationContainer>
+                </>
+              );
+            };
+            ```
+
+        🟢 New Microsoft Teams integration:
+            ```tsx
+            import { FunctionComponent, useCallback, useState } from 'react';
+            import { IntegrationContainer } from './IntegrationContainer';
+            import { Button, Checkbox, Modal } from 'antd';
+            import { DeleteOutlined, SyncOutlined, InfoCircleOutlined } from '@ant-design/icons';
+            // other imports...
+            import Link from 'next/link';
+            import { USER_APP_ROUTES } from '@/routing/routes';
+
+            export const ConnectMicrosoftTeams: FunctionComponent<
+              ConnectMicrosoftTeams
+            > = () => {
+              // State and hooks...
+              const [infoVisible, setInfoVisible] = useState(false);
+              
+              const showInfo = () => {
+                setInfoVisible(true);
+              };
+
+              const hideInfo = () => {
+                setInfoVisible(false);
+              };
+
+              // When connected
+              if (organization?.microsoft_token)
+                return (
+                  <IntegrationContainer>
+                    <div className="flex items-center gap-4">
+                      <MicrosoftTeams className="size-6" />
+                      <div className="text-xl font-semibold">Microsoft Teams Chat</div>
+                      <InfoCircleOutlined 
+                        className="text-blue-500 text-lg cursor-pointer" 
+                        onClick={showInfo}
+                      />
+                    </div>
+                    {/* Channels selection and buttons... */}
+                    
+                    <Modal
+                      title="How to use Microsoft Teams with Centrus"
+                      open={infoVisible}
+                      onCancel={hideInfo}
+                      width={600}
+                      footer={[
+                        <Button key="close" onClick={hideInfo}>
+                          Close
+                        </Button>,
+                      ]}
+                    >
+                      <div className="text-sm mb-4">
+                        <ol className="list-decimal pl-4 my-3 space-y-2">
+                          <li>Select Teams channels that contain conversations you want to reference</li>
+                          <li>Click "Sync" to import messages from selected channels into Centrus</li>
+                          <li>Messages are saved as a text document in your organization's knowledge base</li>
+                          <li>Your AI can now reference these Teams conversations during chats</li>
+                          <li>Resync periodically to update with the latest conversations</li>
+                        </ol>
+                        {/* More help content... */}
+                      </div>
+                    </Modal>
+                  </IntegrationContainer>
+                );
+              // When not connected
+              return (
+                <>
+                  <IntegrationContainer as="button" onClick={() => microsoftAuth()}>
+                    <div className="flex items-center gap-2">
+                      <MicrosoftTeams />
+                      <div className="font-bold">Connect Microsoft Teams</div>
+                      <InfoCircleOutlined 
+                        className="text-blue-500 ml-auto cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          showInfo();
+                        }}
+                      />
+                    </div>
+                  </IntegrationContainer>
+                  
+                  <Modal
+                    title="How to use Microsoft Teams with Centrus"
+                    open={infoVisible}
+                    onCancel={hideInfo}
+                    width={600}
+                    footer={[
+                      <Button key="close" onClick={hideInfo}>
+                        Close
+                      </Button>,
+                    ]}
+                  >
+                    {/* Modal content for disconnected state... */}
+                  </Modal>
+                </>
+              );
+            };
+            ```
+
+    🔄 Website crawler functionality
+
+      📝 Description
+        🎯 Feature: 
+          Added advanced website crawling capabilities with a multi-page selection interface. Users can now scan websites to discover available pages and selectively choose which pages to crawl, making the knowledge base creation process more efficient and targeted.
+        💻 Code: 
+          Implemented a complete website scanning and crawling system with both frontend and backend components. The frontend provides an intuitive UI for scanning websites, selecting specific pages, and initiating multi-page crawls. The backend handles the scanning process and efficiently combines content from multiple pages into a single document.
+
+      📂 Files:
+        - `packages/frontend/src/layouts/app/TrainLayout/WebsitesTab.tsx` (modified)
+        - `packages/frontend/src/hooks/documents/useScanWebsite.ts` (new)
+        - `packages/frontend/src/hooks/documents/useCrawlWebsitePages.ts` (new)
+        - `packages/backend/src/document/document.controller.ts` (modified)
+        - `packages/backend/src/document/document.service.ts` (modified)
+        - `packages/backend/src/firecrawl/firecrawl.service.ts` (modified)
+        - `packages/common/src/api.ts` (modified)
+
+      🔍 Changes:
+          🔴 Old WebsitesTab.tsx:
+            ```tsx
+            <div className="space-y-8">
+              <div className="bg-white rounded-lg border p-4">
+                <div className="text-xl font-semibold mb-4">Website</div>
+                <Form
+                  layout="vertical"
+                  onFinish={({ url }) =>
+                    void addWebsiteDocument(
+                      { url },
+                      { onSuccess: () => form.resetFields() },
+                    )
+                  }
+                  form={form}
+                >
+                  <Form.Item
+                    label="Webpage"
+                    name="url"
+                    rules={[{ required: true }, { type: 'url' }]}
+                  >
+                    <Input />
+                  </Form.Item>
+                  <div className="flex justify-end">
+                    <Button
+                      type="primary"
+                      htmlType="submit"
+                      loading={isLoadingAddWebsite}
+                    >
+                      <div className="flex items-center">
+                        <Globe className="h-4 w-4 mr-2" />
+                        <span>Crawl Website</span>
+                      </div>
+                    </Button>
+                  </div>
+                </Form>
+              </div>
+            </div>
+            ```
+
+          🟢 New WebsitesTab.tsx:
+            ```tsx
+            <div className="space-y-8">
+              <div className="bg-white rounded-lg border p-4">
+                <div className="text-xl font-semibold mb-4">Website</div>
+                <Form
+                  layout="vertical"
+                  onFinish={({ url }) =>
+                    void addWebsiteDocument(
+                      { url },
+                      { onSuccess: () => form.resetFields() },
+                    )
+                  }
+                  form={form}
+                >
+                  <Form.Item
+                    label="Webpage"
+                    name="url"
+                    rules={[{ required: true }, { type: 'url' }]}
+                  >
+                    <Input />
+                  </Form.Item>
+                  <div className="flex justify-end space-x-4">
+                    <Button onClick={() => {
+                      form.validateFields().then(values => {
+                        scanForm.setFieldsValue(values);
+                        setIsScanModalOpen(true);
+                      })
+                    }}>
+                      <Search className="h-4 w-4 mr-2" />
+                      <span>Scan Website</span>
+                    </Button>
+                    <Button type="primary" htmlType="submit">
+                      <Globe className="h-4 w-4 mr-2" />
+                      <span>Crawl Website</span>
+                    </Button>
+                  </div>
+                </Form>
+              </div>
+
+                <Modal title="Website Scanner" width={800}>
+                  <List
+                    className="max-h-96 overflow-y-auto border rounded"
+                    itemLayout="horizontal"
+                    dataSource={scanResults}
+                    renderItem={(item) => (
+                      <List.Item
+                        className={`cursor-pointer hover:bg-gray-50 ${
+                          selectedPages.includes(item.url) ? 'bg-blue-50' : ''
+                        }`}
+                        onClick={() => togglePageSelection(item.url)}
+                      >
+                        <div className="flex items-center w-full p-2">
+                          <div className="mr-3">
+                            {selectedPages.includes(item.url) ? (
+                              <CheckSquare className="h-5 w-5 text-blue-500" />
+                            ) : (
+                              <div className="h-5 w-5 border border-gray-300 rounded-sm" />
+                            )}
+                          </div>
+                          <div className="flex-1 overflow-hidden">
+                            <div className="font-medium truncate">{item.title || 'Untitled Page'}</div>
+                            <div className="text-sm text-gray-500 truncate">{item.url}</div>
+                          </div>
+                        </div>
+                      </List.Item>
+                    )}
+                  />
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    {scanForm.getFieldValue('url')
+                      ? 'No pages found. Try scanning a different website.'
+                      : 'Enter a website URL and click "Scan" to find available pages.'}
+                  </div>
+                )}
+              </Modal>
+            </div>
+            ```
+
+          🟢 New useScanWebsite.ts:
+            ```tsx
+            export const useScanWebsite = () => {
+              return useMutation({
+                mutationFn: async ({ url }: { url: string }) => {
+                  const response = await getAPI().post(API.scanWebsite, {
+                    url,
+                  });
+                  return response;
+                },
+                onError: () => {
+                  message.error('Failed to scan website');
+                },
+              });
+            }; 
+            ```
+
+          🟢 New useCrawlWebsitePages.ts:
+            ```tsx
+            export const useCrawlWebsitePages = () => {
+              const queryClient = useQueryClient();
+
+              return useMutation({
+                mutationFn: async ({ urls, name }: { urls: string[]; name: string }) => {
+                  const response = await getAPI().post(API.crawlWebsitePages, {
+                    urls,
+                    name,
+                  });
+                  return response;
+                },
+                onSuccess: async () => {
+                  await queryClient.invalidateQueries(getDocumentsQueryKey());
+                  message.success('Website pages crawled successfully');
+                },
+                onError: () => {
+                  message.error('Failed to crawl website pages');
+                },
+              });
+            }; 
+            ```
+
+          🟢 New document.controller.ts:
+            ```typescript
+            @Post(API.scanWebsite.path)
+            async scanWebsite(
+              @Body() body: RequestBodyType<typeof API.scanWebsite>,
+              @OrganizationId() organizationId: string,
+            ): Promise<ResponseBodyType<typeof API.scanWebsite>> {
+              return await this.documentService.scanWebsite(body.url);
+            }
+
+            @Post(API.crawlWebsitePages.path)
+            async crawlWebsitePages(
+              @Body() body: RequestBodyType<typeof API.crawlWebsitePages>,
+              @OrganizationId() organizationId: string,
+            ): Promise<ResponseBodyType<typeof API.crawlWebsitePages>> {
+              return await this.documentService.crawlWebsitePages({
+                urls: body.urls,
+                name: body.name,
+                organizationId,
+              });
+            }
+            ```
+
+          🟢 New document.service.ts:
+            ```typescript
+            async scanWebsite(url: string): Promise<{ url: string; title: string }[]> {
+              return await this.firecrawlService.scanWebsite(url);
+            }
+
+            async crawlWebsitePages(params: {
+              urls: string[];
+              name: string;
+              organizationId: string;
+            }): Promise<string> {
+              const content = await this.firecrawlService.crawlPages(params.urls);
+              return await this.createDocument({
+                name: params.name,
+                content,
+                organizationId: params.organizationId,
+              });
+            }
+            ```
+
+          🟢 New firecrawl.service.ts:
+            ```typescript
+            async scanWebsite(url: string) {
+              const pages = await this.crawler.discoverPages(url);
+              return pages.map(page => ({
+                url: page.url,
+                title: page.title || 'Untitled Page',
+              }));
+            }
+
+            async crawlPages(urls: string[]) {
+              const contents = await Promise.all(
+                urls.map(url => this.crawler.extractContent(url))
+              );
+              return contents.join('\n\n');
+            }
+            ```
+
+          🟢 New api.ts:
+            ```typescript
+            export const API = {
+              // ... existing endpoints
+              scanWebsite: {
+                path: '/documents/scan-website',
+                method: 'POST' as const,
+                body: z.object({
+                  url: z.string(),
+                }),
+                response: z.array(
+                  z.object({
+                    url: z.string(),
+                    title: z.string(),
+                  })
+                ),
+              },
+              crawlWebsitePages: {
+                path: '/documents/crawl-website-pages',
+                method: 'POST' as const,
+                body: z.object({
+                  urls: z.array(z.string()),
+                  name: z.string(),
+                }),
+                response: z.string(),
+              },
+            } as const;
+            ```

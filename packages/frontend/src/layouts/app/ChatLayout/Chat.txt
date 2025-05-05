@@ -1,0 +1,410 @@
+import { Avatar } from "@/components/ui/avatar";
+import {
+  ChevronLeft,
+  CreditCard,
+  MicIcon,
+  SendIcon,
+  StopCircleIcon,
+} from "lucide-react";
+import React, {
+  FunctionComponent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { formatDistance } from "date-fns";
+import { Loader } from "@/components/ui/loader";
+import { ChatMessage } from "./ChatMessage";
+import { DataAccessTag } from "@/components/app/DataAccessTag";
+import { ChatDropdown } from "./ChatDropdown";
+import { getUserLabel } from "@/utils/user";
+import { ChatMessageLoader } from "./ChatMessageLoader";
+import { Input, Button, Form, App } from "antd";
+import { useChatDraftMessage } from "@/hooks/chat/useChatDraftMessage";
+import { ScrollToBottomButton } from "@/components/ui/scroll-button";
+import { ChatsCurrentDate } from "@/components/app/Chat/ChatsCurrentDate";
+import groupBy from "lodash/groupBy";
+import { twMerge } from "tailwind-merge";
+import { useInputCursorPosition } from "@/hooks/useInputCursorPosition";
+import { useRouter } from "next/router";
+import { useChatContext } from "@/context/ChatContext";
+import { USER_APP_ROUTES } from "@/routing/routes";
+
+export type ChatProps = {
+  threadId?: string;
+  onBack?: () => void;
+};
+
+export const Chat: FunctionComponent<ChatProps> = ({ threadId, onBack }) => {
+  const { notification } = App.useApp();
+  const router = useRouter();
+  const {
+    messages,
+    owner,
+    thread,
+    streaming,
+    lastMessage,
+    isLoading,
+    hasEnoughMessages,
+    setThreadId,
+    startListening,
+    isListening,
+    stopListening,
+    onTranscribe,
+    onTranscribeEnd,
+    isTranscribingAudio,
+    isStreamingSupported,
+    isLoadingSendMessage,
+    onSendMessage,
+    onCancelAssistantStream,
+    isCancellingAssistantStream: isLoadingCancel,
+    sendingMessage,
+  } = useChatContext();
+  const [form] = Form.useForm<{ message: string }>();
+  const [message, setMessage] = useChatDraftMessage(threadId || "");
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [isDirectStop, setIsDirectStop] = useState(false);
+
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const { selectionStart, selectionEnd } = useInputCursorPosition({
+    textareaRef,
+  });
+
+  const isThreadTagDeleted = useMemo(() => !!thread?.tag.deletedAt, [thread]);
+
+  const groupedMessages = useMemo(() => {
+    const allMessages = messages.slice();
+    let threadTagDeletedMessage = null;
+    if (thread?.tag.deletedAt) {
+      threadTagDeletedMessage = {
+        content: "Thread tag deleted, Unable to send new messages",
+        role: "system",
+        timestamp: new Date(thread.tag.deletedAt).toISOString(),
+        sources: [],
+      };
+    }
+    if (!isLoadingSendMessage && !allMessages.length && thread) {
+      // if the thread tag has been deleted
+      if (threadTagDeletedMessage) {
+        return {
+          [threadTagDeletedMessage.timestamp]: [threadTagDeletedMessage],
+        };
+      }
+      // at first when there's no chat in the thread
+      return { [new Date(thread.created_at).toDateString()]: [] };
+    }
+
+    if (isLoadingSendMessage && sendingMessage) {
+      // this handles rendering the newly sent message, while waiting for api response
+      allMessages.unshift({
+        content: sendingMessage,
+        role: "user",
+        timestamp: new Date().toISOString(),
+        sources: [],
+      });
+    }
+
+    if (threadTagDeletedMessage) {
+      allMessages.unshift(threadTagDeletedMessage);
+    }
+
+    return groupBy(allMessages.reverse(), (m) =>
+      new Date(m.timestamp).toDateString(),
+    );
+  }, [isLoadingSendMessage, messages, sendingMessage, thread]);
+
+  const canSendMessage = useMemo(
+    () => owner && !isLoadingSendMessage && !thread?.archived,
+    [isLoadingSendMessage, owner, thread],
+  );
+
+  const handleSend = useCallback(() => {
+    if (!thread?.id) return;
+    // for deleted threads, cannot send message or record
+    if (isThreadTagDeleted) return;
+    if (!canSendMessage) return;
+    if (isListening) {
+      setIsDirectStop(true);
+      stopListening();
+    }
+
+    if (!hasEnoughMessages) {
+      notification.error({
+        description:
+          "Chat limits exceeded, subscribe to a plan or buy add-on messages",
+        message: "Limits Reached",
+        btn: (
+          <Button
+            size="small"
+            color="primary"
+            variant="link"
+            icon={<CreditCard className="h-4 w-4" />}
+            onClick={() =>
+              router.push(USER_APP_ROUTES.getPath("settingsBilling"))
+            }
+          >
+            Go to Billing
+          </Button>
+        ),
+      });
+      return;
+    }
+    const newMessage: string = form.getFieldValue(["message"]);
+    if (!newMessage) return;
+
+    onSendMessage({ id: thread.id, message: newMessage });
+    setMessage("");
+    form.setFieldValue(["message"], "");
+  }, [
+    thread?.id,
+    isThreadTagDeleted,
+    canSendMessage,
+    isListening,
+    hasEnoughMessages,
+    onSendMessage,
+    setMessage,
+    form,
+    stopListening,
+    notification,
+    router,
+  ]);
+
+  const toggleRecording = useCallback(async () => {
+    if (!threadId) return;
+    // for deleted threads, cannot send message or record
+    if (isThreadTagDeleted) return;
+    if (isListening) {
+      onTranscribe();
+      stopListening();
+      return;
+    }
+    // merge transcript with existing message
+    let newMessage = message ?? "";
+    let start = "";
+    let end = "";
+    if (message && selectionStart >= 0) {
+      start = newMessage.slice(0, selectionStart).trim();
+    }
+    if (message && selectionEnd >= 0) {
+      end = newMessage.slice(selectionEnd).trim();
+    }
+
+    setIsDirectStop(false);
+
+    await startListening((newValue: string) => {
+      newMessage = `${start ? `${start} ` : ""}${newValue}${end ? ` ${end}` : ""}`;
+      form.setFieldValue(["message"], newMessage);
+    });
+
+    setTimeout(() => {
+      if (isDirectStop) {
+        form.setFieldValue(["message"], "");
+      } else {
+        setMessage(form.getFieldValue(["message"]));
+      }
+    }, 100);
+
+    onTranscribeEnd(threadId);
+  }, [
+    isDirectStop,
+    threadId,
+    isThreadTagDeleted,
+    isListening,
+    message,
+    selectionStart,
+    selectionEnd,
+    startListening,
+    onTranscribeEnd,
+    setMessage,
+    form,
+    onTranscribe,
+    stopListening,
+  ]);
+
+  const stopListeningIfStreaming = useCallback(() => {
+    if (!isStreamingSupported) return;
+    if (!isListening) return;
+    stopListening();
+  }, [isStreamingSupported, isListening, stopListening]);
+
+  useEffect(() => {
+    setThreadId(threadId);
+  }, [setThreadId, threadId]);
+
+  useEffect(() => {
+    form.setFieldValue("message", message);
+  }, [form, message]);
+
+  useEffect(() => {
+    if (!(streaming || isLoadingSendMessage)) {
+      return;
+    }
+    const scrollContainer = containerRef.current;
+    if (!scrollContainer) {
+      return;
+    }
+    const tempMessageLoader = scrollContainer.querySelector(
+      "[data-id='temp-chat-loader']",
+    );
+
+    if (tempMessageLoader) {
+      scrollContainer.scrollTop = scrollContainer.scrollHeight;
+      return;
+    }
+    const scrollOffset =
+      scrollContainer.scrollHeight - scrollContainer.scrollTop;
+
+    if (scrollOffset - scrollContainer.clientHeight <= 50) {
+      scrollContainer.scrollTop = scrollContainer.scrollHeight;
+    }
+  }, [containerRef, lastMessage?.content, streaming, isLoadingSendMessage]);
+
+  if (isLoading) return <Loader className="size-12 mx-auto mt-24" />;
+
+  if (!threadId)
+    return (
+      <div className="text-center text-2xl font-semibold text-neutral-400 py-24 w-full flex-1">
+        Select a thread
+      </div>
+    );
+
+  return (
+    <div className="flex-1 flex flex-col h-full relative">
+      <div className="bg-white border-b border-gray-200 p-4 flex items-center justify-between flex-wrap relative">
+        <div className="flex items-start">
+          <button className="block lg:hidden" onClick={onBack}>
+            <ChevronLeft className="text-neutral-400" />
+          </button>
+          <Avatar
+            className="h-10 w-10 shrink-0 bg-blue-950"
+            src="/images/logo-blue-bg.png"
+          />
+          <div className="ml-3">
+            <h2 className="font-semibold">
+              {!!thread?.user && getUserLabel(thread?.user)}
+            </h2>
+            <div className="font-semibold text-gray-500 text-xs mb-1">
+              {thread?.name}
+            </div>
+            {lastMessage?.timestamp && (
+              <p className="text-sm text-gray-500">
+                last message sent:{" "}
+                {formatDistance(lastMessage.timestamp, new Date(), {
+                  addSuffix: true,
+                })}
+              </p>
+            )}
+          </div>
+        </div>
+        {thread && (
+          <div className="flex items-center gap-2">
+            <DataAccessTag tag={thread.tag} />
+            {owner && <ChatDropdown id={thread.id} />}
+          </div>
+        )}
+      </div>
+      <div
+        ref={containerRef}
+        className="flex-1 min-h-0 h-full custom-scroll px-4 pb-4 relative"
+      >
+        {Object.keys(groupedMessages).map((date) => (
+          <div key={date} className="space-y-4">
+            <ChatsCurrentDate date={date} containerRef={containerRef} />
+            {groupedMessages[date].map((chatMessage, index) => (
+              <ChatMessage {...chatMessage} key={index} />
+            ))}
+          </div>
+        ))}
+        {isLoadingSendMessage && <ChatMessageLoader className="mt-4" />}
+      </div>
+      {/* New message input */}
+      <div className="bg-white border-t border-gray-200 p-4 relative">
+        <ScrollToBottomButton
+          className="-top-16 right-4"
+          containerRef={containerRef}
+        />
+        <div className="flex items-end space-x-2">
+          <Button
+            variant="outlined"
+            color="default"
+            size="large"
+            className={twMerge(
+              "rounded-md",
+              isListening && "animate-[pulse_1.5s_ease-in-out_infinite]",
+            )}
+            icon={
+              isListening ? (
+                <span className="relative flex size-5">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+                  <span className="relative inline-flex size-5 rounded-full bg-red-500 items-center justify-center">
+                    <span className="relative flex size-3 border-2 border-white rounded-full">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white-400 opacity-75" />
+                      <span className="relative inline-flex size-3 rounded-full bg-white-500">
+                        <span className="relative flex size-2">
+                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+                          <span className="relative inline-flex size-2 rounded-full bg-red-500" />
+                        </span>
+                      </span>
+                    </span>
+                  </span>
+                </span>
+              ) : (
+                <MicIcon className="size-4 text-red-500" />
+              )
+            }
+            loading={isTranscribingAudio}
+            disabled={
+              !owner ||
+              isLoadingCancel ||
+              isLoadingSendMessage ||
+              isThreadTagDeleted
+            }
+            onClick={toggleRecording}
+          />
+
+          <Form form={form} layout="horizontal" className="flex-1">
+            <Form.Item name="message" initialValue={message} noStyle>
+              <Input.TextArea
+                ref={textareaRef}
+                placeholder="Type a message..."
+                disabled={!owner || isThreadTagDeleted}
+                onChange={(e) => setMessage(e.target.value)}
+                onPressEnter={(e) => {
+                  if (!e.shiftKey && canSendMessage) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    handleSend();
+                  }
+                }}
+                onClick={stopListeningIfStreaming}
+                autoSize={{
+                  maxRows: 6,
+                }}
+              />
+            </Form.Item>
+          </Form>
+
+          <Button
+            type="primary"
+            size="large"
+            className="rounded-md"
+            icon={
+              streaming ? <StopCircleIcon /> : <SendIcon className="h-5 w-5" />
+            }
+            disabled={
+              !owner ||
+              isLoadingCancel ||
+              isLoadingSendMessage ||
+              isTranscribingAudio ||
+              (!isStreamingSupported && isListening) ||
+              isThreadTagDeleted
+            }
+            onClick={streaming ? onCancelAssistantStream : handleSend}
+          />
+        </div>
+      </div>
+    </div>
+  );
+};

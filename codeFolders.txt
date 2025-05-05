@@ -1,0 +1,105 @@
+Document Folders Implementation Plan
+
+EXISTING FILES TO UPDATE:
+1. packages/common/src/dto.ts
+   - Add DocumentFolderDto types
+   - Add folder-related operations DTOs
+
+2. packages/common/src/schema.ts
+   - Add DocumentFolderSchema
+   - Add FolderWithDocumentsSchema
+
+3. packages/common/src/api.ts
+   - Add document folder endpoints
+
+4. packages/backend/src/utils/supabase.types.ts
+    - Add doc folder tables
+
+5. packages/backend/src/document/document.service.ts
+   - Add folder-related methods
+   - Update existing methods to handle folders
+
+6. packages/backend/src/document/document.controller.ts
+   - Add folder endpoints
+   - Update existing endpoints for folder support
+
+7. packages/frontend/src/utils/documentHelpers.ts
+   - Add folder-related utility functions
+
+NEW FILES TO CREATE:
+
+Backend:
+7. packages/backend/src/document/document-folder.service.ts
+   - Core folder operations
+   - CRUD operations for folders
+   - Document-folder relationship management
+
+8. packages/backend/src/document/document-folder.controller.ts
+   - REST endpoints for folder operations
+   - Document-folder relationship endpoints
+
+Frontend Components:
+9. packages/frontend/src/components/app/Train/DocumentFolderList.tsx
+   - Main folder list component
+   - Folder navigation structure
+
+10. packages/frontend/src/components/app/Train/DocumentFolderItem.tsx
+    - Individual folder item component
+    - Folder actions (rename, delete, etc.)
+
+11. packages/frontend/src/components/app/Train/CreateDocumentFolderModal.tsx
+    - Modal for creating new folders
+    - Folder properties form
+
+12. packages/frontend/src/components/app/Train/EditDocumentFolderMenu.tsx
+    - Dropdown menu for folder actions
+    - Edit/Delete options
+
+13. packages/frontend/src/components/app/Train/DocumentFolderPreview.tsx
+    - Folder preview component
+    - Shows folder contents summary
+
+Frontend Hooks:
+14. packages/frontend/src/hooks/document/useDocumentFolders.ts
+    - Hook for fetching folders
+    - Folder state management
+
+15. packages/frontend/src/hooks/document/useCreateDocumentFolder.ts
+    - Hook for folder creation
+
+16. packages/frontend/src/hooks/document/useUpdateDocumentFolder.ts
+    - Hook for updating folder properties
+
+17. packages/frontend/src/hooks/document/useDeleteDocumentFolder.ts
+    - Hook for folder deletion
+
+18. packages/frontend/src/hooks/document/useAttachDocumentToFolder.ts
+    - Hook for adding documents to folders
+
+19. packages/frontend/src/hooks/document/useDetachDocumentFromFolder.ts
+    - Hook for removing documents from folders
+
+20. packages/frontend/src/hooks/document/useBulkAttachDocumentToFolder.ts
+    - Hook for bulk document-folder operations
+
+Layout Updates:
+21. packages/frontend/src/layouts/app/TrainLayout/FilesTab.tsx
+    - Integrate folder structure
+    - Update navigation
+
+Implementation Order:
+1. Start with schema/dto/api updates (1-3)
+2. Implement backend services and controllers (4-8)
+3. Create core frontend hooks (14-20)
+4. Build basic folder components (9-10)
+5. Add creation/editing components (11-12)
+6. Implement preview component (13)
+7. Update layout integration (21)
+8. Final testing and refinements
+
+Note: Each step should include:
+- Type definitions
+- Error handling
+- Loading states
+- Proper validation
+- Unit tests where applicable 

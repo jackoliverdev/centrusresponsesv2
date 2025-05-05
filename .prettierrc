@@ -1,0 +1,7 @@
+{
+  "plugins": ["prettier-plugin-embed", "prettier-plugin-sql"],
+  "language": "postgresql",
+  "keywordCase": "upper",
+  "singleQuote": true,
+  "trailingComma": "all"
+}

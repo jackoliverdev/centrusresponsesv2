@@ -1,0 +1,207 @@
+# Chat Attachments Upload Implementation Plan
+
+## Overview
+
+We will add a paperclip icon next to the globe icon in the chat interface to allow users to upload thread‑specific attachments (documents, images). Uploaded files will be stored in the backend (e.g., S3), tracked per thread, and rendered in the chat UI. Sent messages can include references to these attachments alongside text.
+
+## Files to Modify
+
+### Frontend
+
+✅ 1. **packages/frontend/src/context/ChatContext.tsx**
+   - Add `attachments` state (map of `threadId` → array of attachment objects `{ id, url, name, type }`).
+   - Expose functions `addAttachment(threadId, attachment)` and `removeAttachment(threadId, attachmentId)` in context.
+
+✅ 2. **packages/frontend/src/layouts/app/ChatLayout/Chat.tsx**
+   - Import `Paperclip` icon from `lucide-react`.
+   - Render a new `<Button>` next to the globe toggle: opens file picker dialog.
+   - Use `useChatContext` to call `addAttachment` when a user selects files.
+   - Below the text input, render an `AttachmentPreview` component listing current attachments with remove buttons.
+
+✅ 3. **packages/frontend/src/hooks/chat/useUploadAttachment.tsx** *(new)*
+   - Create a hook that accepts a `File` and calls a new backend endpoint (`/thread/attachments/upload`) using `fetch` or `axios` (multipart/form-data).
+   - Returns a promise resolving to `{ id, url, name, type }`.
+
+✅ 4. **packages/frontend/src/components/Chat/AttachmentPreview.tsx** *(new)*
+   - Displays a list of attachments for the current thread:
+     - Icon or thumbnail (if image).
+     - File name and size.
+     - Remove (`X`) button that calls `removeAttachment`.
+
+✅ 5. **packages/frontend/src/hooks/chat/useSendMessage.tsx**
+   - Extend the send payload to include current attachments metadata: pass `{ id, message, attachments }` to the API.
+
+### Backend
+
+✅ 6. **Database Migration** *(new SQL script)*
+   ```sql
+      CREATE TABLE thread_attachments (
+        id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+        thread_id  TEXT        NOT NULL REFERENCES threads(id) ON DELETE CASCADE,
+        url        TEXT        NOT NULL,
+        filename   TEXT        NOT NULL,
+        mime_type  TEXT        NOT NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+   ```
+
+✅ 7. **packages/backend/src/thread/thread.controller.ts**
+   - Add a new route:
+     ```ts
+     @Post('/thread/attachments/upload')
+     @UseInterceptors(FileInterceptor('file'))
+     async uploadAttachment(
+       @UploadedFile() file: Express.Multer.File,
+       @Body('threadId') threadId: string,
+     ) {
+       // store file in S3 or local storage
+       const url = await this.threadService.saveAttachment(file, threadId);
+       return { id: url.id, url: url.location, name: file.originalname, type: file.mimetype };
+     }
+     ```
+   - Extend `sendMessage` endpoint to accept `attachments?: Array<{ id: string; url: string; name: string; type: string }>` in the request body.
+
+✅ 8. **packages/backend/src/thread/thread.service.ts**
+   - Implement `saveAttachment(file, threadId)`:
+     - Upload file to S3 (or chosen storage).
+     - Insert a row into `thread_attachments` with `threadId`, `url`, `filename`, `mime_type`.
+     - Return the newly created DB record.
+   - In `streamMessage`, when `options.attachments` are present, persist those attachments against the response event or message metadata.
+
+✅ 9. **packages/backend/src/chat/chat.service.ts**
+   - Update `streamMessage` signature to accept optional attachments list.
+   - Pass attachments to `threadService.streamResponses` if needed, or ignore for pure text streams.
+
+✅ 10. **packages/backend/src/thread/thread.service.ts**
+    - When building messages for `getMessagesFromResponses`, include attachments by querying `thread_attachments` for the given thread and appending to the message payload as `{ attachments: [...] }`.
+
+## Detailed Implementation Snippets
+
+### 1. ChatContext.tsx
+```ts
+// ... existing imports ...
+const useChatContextValue = () => {
+  // ... existing state ...
+  const [attachments, setAttachments] = useState<Record<string, Attachment[]>>({});
+
+  const addAttachment = useCallback((threadId: string, att: Attachment) => {
+    setAttachments(prev => ({
+      ...prev,
+      [threadId]: [...(prev[threadId] || []), att],
+    }));
+  }, []);
+
+  const removeAttachment = useCallback((threadId: string, attId: string) => {
+    setAttachments(prev => ({
+      ...prev,
+      [threadId]: prev[threadId]?.filter(a => a.id !== attId) ?? [],
+    }));
+  }, []);
+
+  // return in context
+  return {
+    // ... existing values ...
+    attachments,
+    addAttachment,
+    removeAttachment,
+  };
+};
+```
+
+### 2. Chat.tsx
+```tsx
+import { Paperclip } from 'lucide-react';
+// ... inside render buttons row:
+<Button
+  icon={<Paperclip />}
+  onClick={() => fileInputRef.current?.click()}
+  disabled={!owner}
+/>
+<input
+  ref={fileInputRef}
+  type="file"
+  multiple
+  className="hidden"
+  onChange={async e => {
+    const files = Array.from(e.target.files || []);
+    for (const file of files) {
+      const att = await upload(file, thread.id);
+      addAttachment(thread.id, att);
+    }
+  }}
+/>
+<AttachmentPreview threadId={thread.id} />
+```
+
+### 3. useUploadAttachment.tsx
+```ts
+export const useUploadAttachment = () => {
+  const upload = async (file: File, threadId: string) => {
+    const form = new FormData();
+    form.append('file', file);
+    form.append('threadId', threadId);
+    const res = await fetch('/thread/attachments/upload', { method: 'POST', body: form });
+    return (await res.json()) as Attachment;
+  };
+  return { upload };
+};
+```
+
+### 4. AttachmentPreview.tsx
+```tsx
+export const AttachmentPreview: FC<{ threadId: string }> = ({ threadId }) => {
+  const { attachments, removeAttachment } = useChatContext();
+  return (
+    <div className="flex space-x-2">
+      {(attachments[threadId] || []).map(att => (
+        <div key={att.id} className="flex items-center space-x-1">
+          <a href={att.url} target="_blank" rel="noreferrer">{att.name}</a>
+          <XIcon onClick={() => removeAttachment(threadId, att.id)} />
+        </div>
+      ))}
+    </div>
+  );
+};
+```
+
+### 5. useSendMessage.tsx
+```ts
+mutationFn: async ({ id, message, options, attachments }: SendChatPayload) => {
+  return getAPI().post(API.sendChatMessage, { id, message, options, attachments });
+}
+```
+
+### 6. Backend: upload endpoint
+```ts
+@Post('/thread/attachments/upload')
+@UseInterceptors(FileInterceptor('file'))
+async uploadAttachment(
+  @UploadedFile() file: Express.Multer.File,
+  @Body('threadId') threadId: string
+) {
+  return this.threadService.saveAttachment(file, threadId);
+}
+```
+
+### 7. ThreadService.saveAttachment()
+```ts
+async saveAttachment(file: Express.Multer.File, threadId: string) {
+  const { Location } = await this.s3.upload({ /* params */ }).promise();
+  const { data } = await this.db.from('thread_attachments')
+    .insert({ thread_id: threadId, url: Location, filename: file.originalname, mime_type: file.mimetype })
+    .single();
+  return data;
+}
+```
+
+### 8. Rendering attachments in chat history
+- When loading a thread, query `thread_attachments` for the thread and include in the API response. Frontend can then render attachments inline with past messages.
+
+## Implementation Notes
+
+- Enforce file size limit (e.g. 10 MB) and allowed MIME types.  
+- Show upload progress indicator.  
+- Store attachments in S3 or equivalent with presigned URLs.  
+- Clean up attachments on thread deletion.  
+
+This plan covers everything from UI to storage, so you can integrate thread‑specific uploads end to end! 

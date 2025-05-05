@@ -1,0 +1,29 @@
+o3  {
+      id: 'fs_680811163c188191a8cc31daaf7854e2091c5d4d443625de',
+      type: 'file_search_call',
+      status: 'completed',
+      queries: null,
+      results: null
+    }
+o1  {
+      id: 'fs_68081196f2f88191bbad8fb0746434f6062f08101edfff4b',
+      type: 'file_search_call',
+      status: 'completed',
+      queries: [Array],
+      results: [Array]
+    }
+o4-mini {
+
+      id: 'fs_680811fe0c0081918f2e6e16daa047d403de6fb7c2ebcd1c',
+      type: 'file_search_call',
+      status: 'completed',
+      queries: null,
+      results: null
+    },
+o3-mini {
+      id: 'fs_680812b694dc819181c9ebbeea99f9fa07e1773f5914af5d',
+      type: 'file_search_call',
+      status: 'completed',
+      queries: [Array],
+      results: [Array]
+    },

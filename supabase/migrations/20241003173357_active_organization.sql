@@ -1,0 +1,1 @@
+alter table "public"."users" add column "active_organization_id" integer;

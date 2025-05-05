@@ -1,0 +1,360 @@
+GOAL:
+To implement a comprehensive agent management system within the existing application, adding a new "Agents" tab to the sidebar that allows users to create, manage, and interact with AI agents. The system will respect organisation-level permissions, user-specific visibility rules, and field-level access controls while maintaining proper document associations.
+
+DATABASE STRUCTURE:
+
+1. Core Agent Tables:
+   - agents
+     • id (integer, PK)
+     • name (text)
+     • description (text)
+     • type (text)
+     • default_instructions (text)
+     • default_context (text)
+     • is_visible (boolean)
+     • system_prompt (text)
+     • model (text)
+     • temperature (double precision)
+     • language (varchar)
+     • metadata (jsonb)
+     • created_at, updated_at (timestamp with timezone)
+
+2. Organisation & Instance Management:
+   - organization_agent_instances
+     • id (integer, PK)
+     • organization_id (integer)
+     • agent_id (integer)
+     • name (text)
+     • instructions (text)
+     • context (text)
+     • created_by (integer)
+     • is_org_visible (boolean)
+     • is_read_only (boolean)
+     • platform_type (varchar)
+     • created_at, updated_at (timestamp with timezone)
+
+3. Visibility Control Tables:
+   - agent_user_visibility
+     • id (bigint, PK)
+     • agent_id (integer)
+     • user_id (integer)
+     • created_at (timestamp with timezone)
+
+   - agent_organization_visibility
+     • id (bigint, PK)
+     • agent_id (integer)
+     • organization_id (integer)
+     • created_at (timestamp with timezone)
+
+   - agent_instance_user_visibility
+     • id (integer, PK)
+     • instance_id (integer)
+     • user_id (integer)
+     • is_read_only (boolean)
+     • created_at (timestamp with timezone)
+
+4. Field-Level Permission Tables:
+   - agent_instance_field_permissions
+     • id (bigint, PK)
+     • instance_id (bigint)
+     • field_name (text)
+     • is_hidden (boolean)
+     • created_at (timestamp with timezone)
+
+   - agent_instance_user_field_permissions
+     • id (integer, PK)
+     • instance_id (integer)
+     • user_id (integer)
+     • field_name (text)
+     • is_hidden (boolean)
+     • created_at (timestamp with timezone)
+
+5. Document Management:
+   - agent_documents
+     • id (integer, PK)
+     • organization_agent_instance_id (integer)
+     • document_id (text)
+     • created_at (timestamp with timezone)
+
+FRONTEND IMPLEMENTATION:
+
+1. Navigation & Routing:
+   - Add to USER_APP_ROUTES in routes.ts:
+     ```typescript
+     agents: {
+       path: '/app/agents',
+       isProtected: true,
+     },
+     agentInstance: {
+       path: '/app/agents/[type]/[instanceId]',
+       isProtected: true,
+     }
+     ```
+   - Add to APP_NAVIGATION_ITEMS in navigation/app.tsx:
+     ```typescript
+     {
+       id: 'agents',
+       name: 'Agents',
+       Icon: Bot,  // From Lucide React
+       path: USER_APP_ROUTES.getPath('agents'),
+     }
+     ```
+
+2. Core Components:
+   a. Pages:
+      - /pages/app/agents/index.tsx (Main agents list)
+      - /pages/app/agents/[type]/[instanceId].tsx (Instance details)
+   
+   b. Components:
+      - components/app/Agents/AgentsList.tsx
+      - components/app/Agents/AgentCard.tsx
+      - components/app/Agents/CreateAgentInstanceModal.tsx
+      - components/app/Agents/FieldPermissionsModal.tsx
+      - components/app/Agents/AgentInstanceDetails.tsx
+
+3. Hooks & Services:
+   - hooks/agents/useAgents.ts
+   - hooks/agents/useAgentInstances.ts
+   - hooks/agents/useAgentPermissions.ts
+   - services/agentService.ts
+
+4. Layouts:
+   - Extend AppLayout to support agent-specific layouts
+   - Create AgentLayout for consistent agent page structure
+
+5. State Management:
+   - Use existing useAuthContext for user/role checks
+   - Implement AgentContext for agent-specific state
+   - Leverage useSessionStorage for persistent settings
+
+IMPLEMENTATION PHASES:
+
+1. Phase 1 - Core Setup:
+   - Add routes and navigation
+   - Create basic page structures
+   - Implement core hooks
+   - Set up base layouts
+
+2. Phase 2 - Agent Management:
+   - Implement agent listing
+   - Create instance creation flow
+   - Add basic CRUD operations
+   - Set up type-specific components
+
+3. Phase 3 - Permissions:
+   - Implement visibility controls
+   - Add field-level permissions
+   - Set up organisation access
+   - Add user-specific permissions
+
+4. Phase 4 - Advanced Features:
+   - Document attachment system
+   - Type-specific configurations
+   - Advanced filtering and search
+   - Batch operations
+
+COMPONENT PATTERNS:
+
+1. List Views:
+   ```typescript
+   interface AgentsListProps {
+     onCreateInstance: (type: string) => void;
+     onSelectInstance: (id: string) => void;
+   }
+   ```
+
+2. Detail Views:
+   ```typescript
+   interface AgentInstanceDetailsProps {
+     instanceId: string;
+     onUpdate: (data: AgentInstanceUpdateData) => void;
+     onDelete: () => void;
+   }
+   ```
+
+3. Modals:
+   ```typescript
+   interface CreateAgentInstanceModalProps {
+     isOpen: boolean;
+     onClose: () => void;
+     onSubmit: (data: CreateAgentInstanceData) => void;
+     agentType: string;
+   }
+   ```
+
+STYLING PATTERNS:
+- Use existing Tailwind classes for consistency
+- Follow current component styling patterns
+- Leverage existing UI components (Button, Input, etc.)
+- Maintain responsive design principles
+
+PERMISSION HANDLING:
+- Use existing isOrgAdmin checks from useAuthContext
+- Implement granular permission checks in hooks
+- Add field-level permission components
+- Maintain consistent permission UIs
+
+ERROR HANDLING:
+- Consistent error messages using existing patterns
+- Loading states for all async operations
+- Proper validation in forms
+- Clear user feedback mechanisms
+
+NEXT STEPS:
+1. Begin with route and navigation setup
+2. Create basic page structures
+3. Implement core hooks
+4. Add base components
+5. Set up permission system 
+
+IMPLEMENTATION PROGRESS & PLAN
+
+✅ = Completed
+❌ = To Do
+⏳ = In Progress
+
+1. ROUTING AND NAVIGATION SETUP
+✅ Added routes in routes.ts
+✅ Added navigation items in navigation/app.tsx
+
+2. FRONTEND COMPONENTS TRANSFERRED
+✅ src/pages/app/agents/index.tsx (Main listing page)
+✅ src/components/app/Agents/AgentCard.tsx
+✅ src/components/app/Agents/CreateAgentInstanceModal.tsx
+✅ src/components/app/Agents/CustomAgentCard.tsx
+✅ src/components/app/Agents/CustomAgentRequestModal.tsx
+✅ src/components/app/Agents/FieldPermissionsButton.tsx
+✅ src/components/app/Agents/FieldPermissionsModal.tsx
+✅ src/components/app/Agents/UserFieldPermissionsModal.tsx
+✅ src/components/app/Agents/MessageGenerator/Step1MessageGeneratorSetup.tsx
+✅ src/components/app/Agents/MessageGenerator/Step2MessageInput.tsx
+✅ src/components/app/Agents/MessageGenerator/Step3DocumentUpload.tsx
+✅ src/components/app/Agents/MessageGenerator/Step4MessageResults.tsx
+
+3. HOOKS TRANSFERRED
+✅ src/hooks/useAgents.ts
+✅ src/hooks/useAgentInstances.ts
+✅ src/hooks/useAgentInstanceFieldPermissions.ts
+✅ src/hooks/useAgentInstanceUserFieldPermissions.ts
+✅ src/hooks/useMessageGenerator.ts
+
+4. REQUIRED UPDATES AND FIXES
+
+a. Database Schema Updates
+   ✅ Add agents table
+   ✅ Add organization_agent_instances table
+   ✅ Add agent_instance_user_visibility table
+   ✅ Add agent_instance_field_permissions table
+   ✅ Add agent_documents table
+
+b. API Layer Updates
+   ✅ Add agent-related endpoints in api.ts
+   ✅ Add message generator specific endpoints
+   ✅ Add document handling endpoints
+
+c. Type Definitions
+   ✅ Add AgentSchema in common/types
+   ✅ Add MessageGeneratorSchema in common/types
+   ✅ Add FieldPermissionSchema in common/types
+   ✅ Add UserVisibilitySchema in common/types
+
+d. Component Cleanup
+   ✅ Remove non-message-generator code from AgentInstancePage
+   ✅ Update imports to match new structure
+   ✅ Fix type errors in hooks
+   ✅ Add proper error handling
+
+e. State Management
+   ✅ Implement AgentContext
+   ✅ Add proper loading states
+   ✅ Add error handling states
+   ✅ Add success states
+
+f. Permission System
+   ✅ Implement field-level permissions
+   ✅ Add organization visibility controls
+   ✅ Add user-specific permissions
+   ✅ Add role-based access control
+
+g. Document Management
+   ✅ Implement document upload system
+   ✅ Add document association logic
+   ✅ Add document visibility controls
+
+NEXT IMMEDIATE STEPS:
+
+1. Common Package (packages/common):
+   ✅ 1. packages/common/src/schema.ts
+      - Add AgentSchema
+      - Add MessageGeneratorSchema
+      - Add FieldPermissionSchema
+      - Add UserVisibilitySchema
+   
+   ✅ 2. packages/common/src/api.ts
+      - Add getAgents endpoint
+      - Add createAgentInstance endpoint
+      - Add updateAgentInstance endpoint
+      - Add deleteAgentInstance endpoint
+      - Add getAgentInstanceUserVisibility endpoint
+      - Add updateAgentInstanceVisibility endpoint
+      - Add getAgentInstanceFieldPermissions endpoint
+      - Add runMessageGenerator endpoint
+
+2. Backend Package (packages/backend):
+   ✅ 1. packages/backend/src/utils/supabase.types.ts
+      - Add agent-related table types
+      - Add message generator types
+      - Add field permission types
+
+   ✅ 2. packages/backend/src/agent/
+      ✅ a. agent.controller.ts
+        - Implement agent CRUD endpoints
+        - Add visibility control endpoints
+        - Add field permission endpoints
+
+      ✅ b. agent.service.ts
+        - Implement agent business logic
+        - Add visibility control logic
+        - Add field permission logic
+
+      ✅ c. agent.module.ts
+        - Set up agent module configuration
+        - Configure dependencies
+
+      ✅ d. agent-admin.controller.ts
+        - Implement admin-specific endpoints
+        - Add admin management features
+
+   ✅ 3. packages/backend/src/agent/message-generator/
+      ✅ a. message-generator.controller.ts
+        - Implement message generation endpoints
+        - Add document handling endpoints
+
+      ✅ b. message-generator.service.ts
+        - Implement message generation logic
+        - Add document processing logic
+
+      ✅ c. message-generator.module.ts
+        - Set up message generator module
+        - Configure dependencies
+
+      ✅ d. dto/message-generator.dto.ts
+        - Define message generator DTOs
+        - Add validation rules
+
+3. Frontend Files:
+   ✅ 1. src/routing/navigation/admin.tsx
+
+   ✅ 2. src/routing/navigation/app.tsx
+      - Add agents navigation item
+      
+   ✅ 4. src/utils/agentHelpers.ts
+      - Add agent-related API helpers
+
+NOTES:
+- Focus only on message generator functionality for now
+- Ensure all components follow existing codebase patterns
+- Maintain consistent error handling and loading states
+- Follow existing permission system patterns
+- Keep British English throughout the implementation
+- Maintain existing styling patterns 

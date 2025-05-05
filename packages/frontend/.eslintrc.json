@@ -1,0 +1,12 @@
+{
+  "extends": ["next/core-web-vitals", "next/typescript"],
+  "rules": {
+    "react/self-closing-comp": "error",
+    "react-hooks/exhaustive-deps": "error",
+    "no-undef-init": "error",
+    "@typescript-eslint/no-unused-vars": "warn",
+    "@typescript-eslint/no-explicit-any": "warn",
+    "@typescript-eslint/ban-types": "warn",
+    "no-shadow": "error"
+  }
+}

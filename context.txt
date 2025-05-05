@@ -1,0 +1,105 @@
+
+# User-Specific AI Context Implementation Plan
+
+## 1. Database Changes
+
+### SQL to run in Supabase:
+```sql
+ALTER TABLE public.users
+ADD COLUMN ai_user_context TEXT DEFAULT '';
+```
+
+## 2. Type Updates
+
+✅ ### (modify) packages/backend/src/utils/supabase.types.ts
+- Add `ai_user_context` to the users table Row, Insert, and Update types
+
+✅ ### (modify) packages/common/src/schema.ts
+- Add `aiUserContext` to the `UserSchema` type:
+```typescript
+export type UserSchema = {
+  // existing fields
+  aiUserContext?: string;
+  // remaining fields
+};
+```
+✅ ### (modify) packages/backens/src/db/db.schema.ts
+- Add `aiUserContext` to the `UserSchema` type:
+```typescript
+export type UserSchema = {
+  // existing fields
+  aiUserContext?: string;
+  // remaining fields
+};
+
+## 3. API Changes
+
+✅ ### (modify) packages/common/src/api.ts
+- Add new endpoint for updating user AI context:
+```typescript
+updateUserAIContext: new APIEndpoint<
+  { ai_user_context: string },
+  UserWithOrganizationSchema
+>({
+  path: '/user/update-ai-context',
+}),
+```
+
+✅ ### (modify) packages/backend/src/user/user.controller.ts
+- Add new endpoint handler for updating user AI context
+
+✅ ### (modify) packages/backend/src/user/user.service.ts
+- Implement method to update user AI context in Supabase
+
+## 4. UI Components
+
+✅ ### (modify) packages/frontend/src/components/app/AiModelSettingsComponent.tsx
+- Add new user context textarea below organization context
+- Update state management to include user context
+- Add functionality to save user context
+
+✅ ### (new) packages/frontend/src/hooks/user/useUpdateUserAIContext.ts
+- Create hook to call the new API endpoint for updating user context
+
+### (modify) packages/frontend/src/layouts/app/SettingsLayout.tsx
+- Ensure AI Model settings tab integrates the updated AiModelSettingsComponent
+
+## 5. Chat/Thread Integration
+
+### (modify) packages/frontend/src/hooks/chat/useSendMessage.tsx
+- Update to include user context when sending messages
+- Modify mutationFn to include user context from user state
+
+✅ ### (modify) packages/backend/src/chat/chat.service.ts
+- Update message handling to combine organization and user contexts
+- Update OpenAI API calls to include merged context
+
+✅ ### (modify) packages/backend/src/thread/thread.service.ts
+- Update the streamResponses and createResponseAndPoll methods to include user context
+- Modify context handling to merge organization and user contexts
+
+## 6. Other UI Updates
+
+### (modify) packages/frontend/src/layouts/app/ChatLayout/Chat.tsx
+- Ensure the chat component works with the updated context system
+
+## Implementation Details
+
+1. **AiModelSettingsComponent changes:**
+   - Add a new section for "Personal Context" with a textarea
+   - Update the save handler to call both organization update and user context update APIs
+
+2. **Backend handling:**
+   - When generating responses, concatenate organization context and user context
+   - Format: "ORGANIZATION CONTEXT: {org_context}\nUSER CONTEXT: {user_context}"
+
+3. **Thread Service:**
+   - Fetch user context when needed in response generation
+   - Combine contexts intelligently with the AI prompt
+
+4. **UI Experience:**
+   - Make it clear which context applies to the whole organization vs personal
+
+5. **Error handling:**
+   - Add proper validation for context length limits
+   - Handle gracefully when either context is missing

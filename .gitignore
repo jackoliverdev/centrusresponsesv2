@@ -1,0 +1,18 @@
+# Node modules
+node_modules
+packages/**/node_modules
+
+# Build outputs
+packages/**/dist
+packages/**/build
+
+# Logs
+logs
+*.log
+
+# MacOS files
+.DS_Store
+
+# IDEs
+.idea
+.vscode

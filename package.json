@@ -1,0 +1,48 @@
+{
+  "name": "centrus",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev:supabase": "yarn supabase start",
+    "dev:common": "yarn workspace common build:watch",
+    "build:common": "yarn workspace common build",
+    "add:common": "yarn workspace common add",
+    "dev:frontend": "yarn workspace frontend dev",
+    "start:frontend": "yarn workspace frontend start",
+    "build:frontend": "yarn build:common && yarn workspace frontend build",
+    "add:frontend": "yarn workspace frontend add",
+    "dev:backend": "yarn workspace backend start:dev",
+    "start:backend": "yarn workspace backend start",
+    "add:backend": "yarn workspace backend add",
+    "build:backend": "yarn build:common && yarn workspace backend build",
+    "build:all": "yarn workspace common build && yarn workspace backend build && yarn workspace frontend build",
+    "build": "yarn workspace common build && yarn workspace backend build && yarn workspace frontend build",
+    "dev": "concurrently \"yarn dev:common\" \"yarn dev:frontend\" \"yarn dev:backend\"",
+    "gen-types": "yarn workspace backend gen-types",
+    "lint": "yarn workspaces run lint",
+    "format": "yarn workspaces run format",
+    "nest": "yarn workspace backend nest",
+    "cn": "yarn workspace frontend cn",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.1",
+    "eslint": "^8.42.0",
+    "husky": "^9.1.6",
+    "lint-staged": "^15.2.10",
+    "prettier": "^3.3.3",
+    "prettier-plugin-embed": "^0.4.15",
+    "prettier-plugin-sql": "^0.18.1",
+    "supabase": "^2.12.0"
+  },
+  "dependencies": {
+    "openai": "^4.96.0"
+  },
+  "packageManager": "yarn@4.5.3+sha512.3003a14012e2987072d244c720506549c1aab73ee728208f1b2580a9fd67b92d61ba6b08fe93f6dce68fd771e3af1e59a0afa28dd242dd0940d73b95fedd4e90"
+}

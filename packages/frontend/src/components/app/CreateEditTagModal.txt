@@ -1,0 +1,313 @@
+"use client";
+
+import { useEffect, FunctionComponent, useCallback, useMemo } from "react";
+import { Modal, Button, Form, Input, ColorPicker } from "antd";
+import { CloseOutlined } from "@ant-design/icons";
+import { useCreateTag } from "@/hooks/tags/useCreateTag";
+import { AggregationColor } from "antd/lib/color-picker/color";
+import { DEFAULT_TAG_COLORS, TagSchema } from "common";
+import { DataAccessTag } from "@/components/app/DataAccessTag";
+import { useUpdateTag } from "@/hooks/tags/useUpdateTag";
+
+type TagItem = {
+  name: string;
+  backgroundColor: string | AggregationColor;
+  textColor: string | AggregationColor;
+};
+
+type Props = {
+  open: boolean;
+  tag?: TagSchema;
+  onClose(success?: boolean): void;
+};
+
+// Create presets from our default colors
+const bgPresets = [
+  {
+    label: "Light Tags",
+    colors: DEFAULT_TAG_COLORS.slice(0, 10).map((c) => c.backgroundColor),
+  },
+  {
+    label: "Dark Tags",
+    colors: DEFAULT_TAG_COLORS.slice(10).map((c) => c.backgroundColor),
+  },
+];
+
+const txtPresets = [
+  {
+    label: "Text Colors",
+    colors: [
+      "#000000",
+      "#FFFFFF",
+      ...DEFAULT_TAG_COLORS.slice(0, 10).map((c) => c.textColor),
+    ],
+  },
+];
+
+export const CreateEditTagModal: FunctionComponent<Props> = ({
+  tag,
+  open,
+  onClose,
+}) => {
+  const [form] = Form.useForm<TagItem>();
+  const values = Form.useWatch([], form);
+
+  const { mutate: createTag, isLoading: isLoadingCreateTag } = useCreateTag();
+
+  const { mutate: updateTag, isLoading: isLoadingUpdateTag } = useUpdateTag();
+
+  const isEdit = useMemo(() => !!tag, [tag]);
+
+  const isSubmitting = useMemo(
+    () => isLoadingCreateTag || isLoadingUpdateTag,
+    [isLoadingCreateTag, isLoadingUpdateTag],
+  );
+
+  const formValues = useMemo(() => {
+    if (!values) {
+      return { name: "", backgroundColor: "", textColor: "" };
+    }
+
+    return {
+      name: values.name,
+      backgroundColor:
+        typeof values.backgroundColor === "string"
+          ? values.backgroundColor
+          : values.backgroundColor?.toHexString(),
+      textColor:
+        typeof values.textColor === "string"
+          ? values.textColor
+          : values.textColor?.toHexString(),
+    };
+  }, [values]);
+
+  const getMatchingTextColor = useCallback((backgroundColor: string) => {
+    const matchingDefault = DEFAULT_TAG_COLORS.find(
+      (c) => c.backgroundColor === backgroundColor,
+    );
+    return matchingDefault?.textColor;
+  }, []);
+
+  const handleSubmit = useCallback(() => {
+    if (isEdit && tag?.id) {
+      updateTag(
+        {
+          id: tag?.id,
+          background_color: formValues.backgroundColor,
+          text_color: formValues.textColor,
+        },
+        {
+          onSuccess() {
+            onClose(true);
+          },
+        },
+      );
+    } else {
+      createTag(
+        {
+          name: formValues.name,
+          background_color: formValues.backgroundColor,
+          text_color: formValues.textColor,
+        },
+        {
+          onSuccess() {
+            onClose(true);
+          },
+        },
+      );
+    }
+  }, [
+    tag?.id,
+    isEdit,
+    formValues.name,
+    formValues.backgroundColor,
+    formValues.textColor,
+    onClose,
+    createTag,
+    updateTag,
+  ]);
+
+  useEffect(() => {
+    if (!open) {
+      form.resetFields();
+    } else if (tag) {
+      form.setFieldsValue({
+        name: tag.name,
+        backgroundColor: tag.backgroundColor,
+        textColor: tag.textColor,
+      });
+    } else {
+      form.setFieldsValue({
+        name: "",
+        backgroundColor: "#1677ff",
+        textColor: "#ffffff",
+      });
+    }
+  }, [form, open, tag]);
+
+  return (
+    <Modal
+      open={open}
+      footer={null}
+      title={
+        <h2 className="text-xl font-bold">
+          {isEdit ? "Edit Tag Colors" : "Create New Tag"}
+        </h2>
+      }
+      closeIcon={<CloseOutlined className="text-grey-dark" />}
+      className="rounded-xl shadow-card-shadow"
+      closable={!isSubmitting}
+      maskClosable={!isSubmitting}
+      keyboard={!isSubmitting}
+      onCancel={() => onClose()}
+    >
+      {open && (
+        <>
+          <Form
+            form={form}
+            layout="vertical"
+            requiredMark={false}
+            disabled={isSubmitting}
+            onFinish={handleSubmit}
+          >
+            <Form.Item
+              name="name"
+              label="Tag Name"
+              className="w-full"
+              rules={[
+                {
+                  type: "string",
+                  required: true,
+                  message: "Tag name is required",
+                  min: 1,
+                },
+              ]}
+            >
+              <Input
+                disabled={isEdit}
+                placeholder="Enter tag name"
+                size="large"
+                className="w-full"
+              />
+            </Form.Item>
+
+            <div className="flex flex-wrap gap-4">
+              <div className="flex flex-col gap-2">
+                <label>Background color</label>
+                <Form.Item
+                  name="backgroundColor"
+                  label="Background Color"
+                  dependencies={[["textColor"]]}
+                  initialValue="#1677ff"
+                  rules={[
+                    {
+                      required: true,
+                      message: "Background color is required",
+                    },
+                    ({ getFieldValue }) => ({
+                      validator(_, value) {
+                        const textColor = getFieldValue(["textColor"]);
+                        const textColorString =
+                          typeof textColor === "string"
+                            ? textColor
+                            : textColor.toHexString();
+                        const bgColorString =
+                          typeof value === "string"
+                            ? value
+                            : value?.toHexString();
+
+                        if (value && textColorString === bgColorString) {
+                          return Promise.reject(new Error("Same as text"));
+                        }
+
+                        return Promise.resolve();
+                      },
+                    }),
+                  ]}
+                  noStyle
+                >
+                  <ColorPicker
+                    presets={bgPresets}
+                    showText
+                    onChange={(value) => {
+                      const bgColor = value.toHexString();
+                      const textColor = getMatchingTextColor(bgColor);
+                      if (textColor) {
+                        form.setFieldValue(["textColor"], textColor);
+                      }
+                    }}
+                  />
+                </Form.Item>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label>Text color</label>
+                <Form.Item
+                  name="textColor"
+                  label="Text Color"
+                  initialValue="#ffffff"
+                  dependencies={[["backgroundColor"]]}
+                  rules={[
+                    {
+                      required: true,
+                      message: "Text color is required",
+                    },
+                    ({ getFieldValue }) => ({
+                      validator(_, value) {
+                        const bgColor = getFieldValue(["backgroundColor"]);
+                        const bgColorString =
+                          typeof bgColor === "string"
+                            ? bgColor
+                            : bgColor.toHexString();
+                        const textColorString =
+                          typeof value === "string"
+                            ? value
+                            : value?.toHexString();
+
+                        if (value && bgColorString === textColorString) {
+                          return Promise.reject(
+                            new Error("Same as background"),
+                          );
+                        }
+
+                        return Promise.resolve();
+                      },
+                    }),
+                  ]}
+                  noStyle
+                >
+                  <ColorPicker presets={txtPresets} showText />
+                </Form.Item>
+              </div>
+            </div>
+
+            {values?.name && (
+              <div className="mt-6">
+                <p className="text-sm text-gray-500 mb-2">Preview:</p>
+                <DataAccessTag tag={formValues} />
+              </div>
+            )}
+
+            <div className="flex justify-end flex-wrap-reverse items-stretch sm:items-center gap-4 mt-4">
+              <Button
+                className="flex-1 sm:flex-grow-0"
+                disabled={isSubmitting}
+                onClick={() => onClose()}
+              >
+                Cancel
+              </Button>
+              <Button
+                htmlType="submit"
+                type="primary"
+                className="flex-1 sm:flex-grow-0"
+                loading={isSubmitting}
+              >
+                {isEdit ? "Update Tag" : "Create Tag"}
+              </Button>
+            </div>
+          </Form>
+        </>
+      )}
+    </Modal>
+  );
+};

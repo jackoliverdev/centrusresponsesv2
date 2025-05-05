@@ -1,0 +1,352 @@
+import { FunctionComponent, useCallback, useMemo, useState } from "react";
+import { AppLayout } from "../AppLayout";
+import { Input } from "@/components/ui/input";
+import { twMerge } from "tailwind-merge";
+import { Chat } from "./Chat";
+import { useChats } from "@/hooks/chat/useChats";
+import { useAuthContext } from "@/context/AuthContext";
+import { Loading } from "@/components/common/Loading";
+import { NewChatButton } from "./NewChatButton";
+import { ArchiveIcon } from "lucide-react";
+import { SortDropdown } from "./SortDropdown";
+import { Tooltip, Tabs, Button, message } from "antd";
+import { getUserLabel } from "@/utils/user";
+import { SortOrderDropdown } from "./SortOrderDropdown";
+import { ChatSchema } from "common";
+import { usePinnedThreads } from "@/hooks/chat/usePinnedThreads";
+import { ThreadItem } from "@/components/app/Chat/Thread";
+import { ThreadFolderList } from "@/components/app/Chat/ThreadFolderList";
+import { useThreadFolders } from "@/hooks/chat/useThreadFolders";
+import { useReorderThreadPin } from "@/hooks/chat/useReorderThreadPin";
+import { ChatContextProvider } from "@/context/ChatContext";
+
+export type ChatLayoutProps = object;
+
+const sorts = [
+  {
+    name: "Date",
+    key: "date",
+    sortFn: (
+      a: { modified_at: ChatSchema["modified_at"] },
+      b: { modified_at: ChatSchema["modified_at"] },
+    ) => new Date(a.modified_at).valueOf() - new Date(b.modified_at).valueOf(),
+    labels: {
+      ascending: "Oldest",
+      descending: "Newest",
+    },
+  },
+  {
+    name: "Chat Name",
+    key: "name",
+    sortFn: (
+      a: { name: ChatSchema["name"] },
+      b: { name: ChatSchema["name"] },
+    ) => a.name.localeCompare(b.name),
+    labels: {
+      ascending: "A-Z",
+      descending: "Z-A",
+    },
+  },
+  {
+    name: "User",
+    key: "user",
+    sortFn: (
+      a: { user: ChatSchema["user"] },
+      b: { user: ChatSchema["user"] },
+    ) => getUserLabel(a.user).localeCompare(getUserLabel(b.user)),
+    labels: {
+      ascending: "A-Z",
+      descending: "Z-A",
+    },
+  },
+  {
+    name: "Tag",
+    key: "tag",
+    sortFn: (a: { tag: ChatSchema["tag"] }, b: { tag: ChatSchema["tag"] }) =>
+      (a.tag.name || "").localeCompare(b.tag.name || ""),
+    labels: {
+      ascending: "A-Z",
+      descending: "Z-A",
+    },
+  },
+];
+
+export const ChatLayout: FunctionComponent<ChatLayoutProps> = () => {
+  const { user: currentUser } = useAuthContext();
+  const {
+    data: folders = [],
+    isLoading: isLoadingFolders,
+    isError: isFoldersError,
+  } = useThreadFolders();
+  const { data: chats = [], isLoading: isLoadingChats } = useChats();
+  const { orderMap, isPinned, isLowestPin, isHighestPin, pinnedThreads } =
+    usePinnedThreads();
+  const { mutate: reorderPins, isLoading: isReordering } =
+    useReorderThreadPin();
+  const [selectedFolderId, setSelectedFolderId] = useState<number>();
+  const [selectedThreadId, setSelectedThreadId] = useState<string>();
+  const [selectedTab, setSelectedTab] = useState("All");
+  const [search, setSearch] = useState("");
+  const [showArchived, setShowArchived] = useState(false);
+  const [sort, setSort] = useState(sorts[0].key);
+  const [ascending, setAscending] = useState(false);
+
+  const { sortFn, labels: sortLabels } = useMemo(
+    () => sorts.find(({ key }) => key == sort) || sorts[0],
+    [sort],
+  );
+
+  const foldersMap = useMemo(
+    () =>
+      (folders ?? []).reduce(
+        (acc, curr) => ({
+          ...acc,
+          [curr.id]: curr.threads.map(({ id }) => id),
+        }),
+        {} as Record<number, string[]>,
+      ),
+    [folders],
+  );
+
+  const searchedThreads = useMemo(() => {
+    const filteredThreads = chats
+      .filter(({ type }) => selectedTab == "All" || type == selectedTab)
+      .filter(({ archived }) => archived == showArchived)
+      .filter(
+        ({ id }) =>
+          !selectedFolderId || foldersMap[selectedFolderId]?.includes(id),
+      );
+
+    const sortedThreads = filteredThreads
+      .filter(({ user, ...thread }) => {
+        const searchTerm = search.toLowerCase();
+        return (
+          searchTerm == "" ||
+          thread.name?.toLowerCase().includes(searchTerm) ||
+          thread.last_message?.toLowerCase().includes(searchTerm) ||
+          thread.tag?.name?.toLowerCase().includes(searchTerm) ||
+          getUserLabel(user).toLowerCase().includes(searchTerm) ||
+          user.email.toLowerCase().includes(searchTerm)
+        );
+      })
+      .sort(sortFn);
+
+    const pinnedChats = sortedThreads
+      .filter((chat) => isPinned(chat.id))
+      .sort((a, b) => {
+        const orderA = orderMap[a.id];
+        const orderB = orderMap[b.id];
+        return orderA - orderB;
+      });
+
+    const unpinnedChats = sortedThreads.filter((chat) => !isPinned(chat.id));
+
+    if (ascending) return [...pinnedChats, ...unpinnedChats];
+    return [...pinnedChats, ...unpinnedChats.reverse()];
+  }, [
+    chats,
+    sortFn,
+    ascending,
+    selectedTab,
+    showArchived,
+    selectedFolderId,
+    foldersMap,
+    search,
+    isPinned,
+    orderMap,
+  ]);
+
+  const canModifyChat = useCallback(
+    (chatUserId: number) => {
+      return currentUser?.id === chatUserId;
+    },
+    [currentUser?.id],
+  );
+
+  const onReorderThreadPins = useCallback(
+    (itemId: string, newIndex: number) => {
+      const threads = pinnedThreads ?? [];
+
+      if (threads.length === 0) {
+        return;
+      }
+
+      const newThreads = threads.filter(({ threadId }) => threadId !== itemId);
+      const thread = threads.find(({ threadId }) => threadId === itemId);
+
+      if (!thread) {
+        return;
+      }
+
+      newThreads.splice(newIndex, 0, thread);
+
+      reorderPins(
+        newThreads.map((t, i) => ({ ...t, order: i + 1 })),
+        {
+          onSuccess: () => {
+            return void message.success("Thread reordered successfully.");
+          },
+          onError: () =>
+            void message.error("Failed to reorder thread. Please try again"),
+        },
+      );
+    },
+    [pinnedThreads, reorderPins],
+  );
+
+  return (
+    <AppLayout
+      currentItemId="chat"
+      subtitle="Start conversations with AI-powered assistance"
+      className="lg:gap-y-0 gap-y-0 pb-0 self-stretch min-h-0"
+      containerClassName="h-screen"
+      headerClassName={selectedThreadId ? "hidden lg:block" : ""}
+      action={<NewChatButton onSuccess={(id) => setSelectedThreadId(id)} />}
+    >
+      <ChatContextProvider>
+        <div className="flex bg-gray-100 flex-1 min-h-0">
+          <div
+            className={twMerge(
+              "w-full lg:w-1/3 bg-white border-r border-gray-200 flex flex-col px-2 lg:px-4",
+              selectedThreadId && "hidden lg:flex",
+            )}
+          >
+            <div className="flex items-stretch gap-2 py-2 lg:py-4">
+              <Input
+                type="search"
+                placeholder="Search chats, messages, and people..."
+                className="flex-1 text-sm lg:text-base h-9 lg:h-10 min-h-0"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+              <Tooltip
+                title={
+                  showArchived ? "Show unarchived chats" : "Show archived chats"
+                }
+              >
+                <button
+                  className={twMerge(
+                    "h-9 lg:h-10 w-9 lg:w-10 border transition aspect-square flex items-center justify-center rounded-lg text-neutral-400",
+                    showArchived &&
+                      "border-secondary text-secondary bg-secondary/20",
+                  )}
+                  onClick={() => setShowArchived(!showArchived)}
+                >
+                  <ArchiveIcon />
+                </button>
+              </Tooltip>
+            </div>
+
+            {/* Folder section with tighter spacing */}
+            <div className="mb-1 lg:mb-2 max-h-[30%] custom-scroll">
+              <ThreadFolderList
+                chats={chats}
+                folders={folders}
+                isLoading={isLoadingFolders}
+                isError={isFoldersError}
+                selectedFolderId={selectedFolderId}
+                onFolderSelect={setSelectedFolderId}
+                onChatSelect={setSelectedThreadId}
+                className="py-0.5 lg:py-2"
+              />
+            </div>
+
+            {selectedFolderId && (
+              <div className="mb-1 lg:mb-2">
+                <Button
+                  type="text"
+                  size="small"
+                  color="danger"
+                  className="text-red-400 hover:!text-red-500 text-xs h-7 lg:h-8"
+                  onClick={() => setSelectedFolderId(undefined)}
+                >
+                  Clear folder filter
+                </Button>
+              </div>
+            )}
+
+            <div className="flex items-center gap-2 px-2">
+              <SortDropdown options={sorts} value={sort} onChange={setSort} />
+              <SortOrderDropdown
+                labels={sortLabels}
+                ascending={ascending}
+                onChange={setAscending}
+              />
+            </div>
+            {currentUser?.is_teamleader && (
+              <Tabs
+                defaultActiveKey="All"
+                onChange={setSelectedTab}
+                items={["All", "Personal", "Team"].map((key) => ({
+                  key,
+                  label: key,
+                }))}
+              />
+            )}
+            <div className="overflow-y-auto flex-1 custom-scroll">
+              {isLoadingChats && <Loading className="mt-24" />}
+              <div>
+                {!isLoadingChats && chats.length == 0 && (
+                  <div className="text-center text-2xl font-semibold text-neutral-400 py-24">
+                    No chats.
+                  </div>
+                )}
+
+                {!isLoadingChats &&
+                  chats.length !== 0 &&
+                  searchedThreads.length === 0 &&
+                  showArchived && (
+                    <div className="text-center text-xl lg:text-2xl font-semibold text-neutral-400 py-12 lg:py-24">
+                      No archived chats.
+                    </div>
+                  )}
+
+                {/* Conversation list items */}
+                {searchedThreads.map((thread, index) => {
+                  const threadIsPinned = isPinned(thread.id);
+                  const isOwner = canModifyChat(thread.user_id);
+                  const isFirstPin = isHighestPin(thread.id);
+                  const isLastPin = isLowestPin(thread.id);
+
+                  return (
+                    <ThreadItem
+                      key={thread.id}
+                      data={thread}
+                      selectedThreadId={selectedThreadId}
+                      isOwner={isOwner}
+                      isFirstPin={isFirstPin}
+                      isLastPin={isLastPin}
+                      isThreadPinned={threadIsPinned}
+                      onSelect={setSelectedThreadId}
+                      isReordering={isReordering}
+                      onReorder={(dir) =>
+                        onReorderThreadPins(
+                          thread.id,
+                          dir === "up" ? index - 1 : index + 1,
+                        )
+                      }
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Main chat area */}
+          <div
+            className={twMerge(
+              "lg:block flex-1",
+              !selectedThreadId && "hidden",
+            )}
+          >
+            <Chat
+              threadId={selectedThreadId}
+              onBack={() => setSelectedThreadId(undefined)}
+              key={selectedThreadId}
+            />
+          </div>
+        </div>
+      </ChatContextProvider>
+    </AppLayout>
+  );
+};
