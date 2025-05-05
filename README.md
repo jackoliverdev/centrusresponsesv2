@@ -1,110 +1,51 @@
-# API Updates
+# Centrus: AI-Powered Chat & Document Management Platform
 
 ## Overview
-This document outlines the changes needed to integrate OpenAI's new Responses API into the existing codebase.
+Centrus is a secure, enterprise-grade platform designed to streamline business communication and document management through advanced AI-powered chat, intelligent tagging, and seamless integration with your existing workflows. Built for B2B organisations, Centrus enhances productivity, knowledge sharing, and compliance across teams.
 
-## Key Changes for Responses API Integration
+## Key Features
 
-### 1. New API Client Methods
-- Core Response creation methods
-- Stream response functionality
-- Response management utilities
+- **AI-Powered Chat**: Real-time, context-aware chat with support for document attachments, suggested prompts, and agent-assisted conversations.
+- **Document Management**: Upload, organise, and search documents with intelligent tagging and folder structures.
+- **Tag Management**: Flexible tagging system for categorising threads, documents, and users, with bulk actions and advanced filtering.
+- **Usage Analytics**: Visual dashboards for monitoring storage, message volume, and user activity, supporting custom limits and add-ons.
+- **Role-Based Access**: Fine-grained permissions for admins, team leaders, agents, and end users.
+- **Integration Ready**: Connect with third-party services (e.g., Google Drive, Microsoft Teams) and leverage built-in tools for web and file search.
+- **Secure by Design**: Enterprise authentication, audit trails, and compliance with industry standards.
 
-### 2. Type Definitions
-- Import response-related types from OpenAI SDK
-- Define custom types for application-specific functionality
-- Extend existing types to accommodate new response formats
+## Architecture Overview
 
-### 3. Built-in Tools Implementation
-- Web Search Integration
-  - Enable querying the web for real-time information
-  - Configure search parameters and behavior
-  
-- File Search Integration
-  - Allow searching across uploaded files
-  - Configure file retrieval parameters
-  - Integrate with existing file management
+Centrus is built on a modular architecture, comprising:
+- **Frontend**: Modern React-based interface for intuitive user experience and responsive design.
+- **Backend**: Scalable Node.js/NestJS API with robust business logic, agent orchestration, and secure data handling.
+- **Database**: Managed via Supabase for real-time data, user management, and storage.
+- **AI Services**: Integrates with leading AI providers for chat, search, and document intelligence.
 
-### 4. Persistent Conversations
-- Conversation creation and management
-- Conversation retrieval and access
-- Adding new messages to existing conversations
-- Managing conversation history and context
+## Typical Use Cases
 
-### 5. Enhanced Streaming
-- Streaming with built-in tools
-- Managing chunked response processing
-- Real-time response handling
+- Internal team collaboration and knowledge sharing
+- Customer support and agent-assisted chat
+- Document search, retrieval, and compliance management
+- Analytics and reporting for operational oversight
 
-## Files to be Modified
+## Getting Started
 
-### 1. Assistant Service
-- `packages/backend/src/assistant/assistant.service.ts`
-  - Replace assistant creation with responses API
-  - Update file management to support new response formats
-  - Add conversation state management
-  - Modify database interactions for persistent storage
+1. **Clone the repository**
+2. **Install dependencies** using your preferred package manager
+3. **Configure environment variables** (see `.env.example` in each package)
+4. **Run the backend and frontend**
+5. **Access the platform via your browser**
 
-### 2. Thread Service
-- `packages/backend/src/thread/thread.service.ts`
-  - Replace thread creation with conversation API
-  - Update message handling for new message formats
-  - Implement streaming with built-in tools
-  - Update folder management to work with new conversation structure
+For detailed setup instructions, please refer to the documentation in the `/docs` directory.
 
-### 3. Database Schema
-- Replace assistants table with responses configuration
-- Update thread tables to conversation structure
-- Modify file reference tables
-- Add tables for web search caching and history
+## Contributing
 
-### 4. API Controllers
-- Update endpoints to use new response formats
-- Add endpoints for web search capabilities
-- Modify streaming endpoints for enhanced functionality
-- Update file integration endpoints
+We welcome contributions from the community and enterprise partners. Please open issues or submit pull requests for feature requests, bug fixes, or documentation improvements.
 
-## Key Changes by Component
+## Licence
 
-### 1. OpenAI Service
-- Replace Assistants API calls with Responses API
-- Implement conversation management
-- Add web and file search capabilities
-- Update error handling for new response formats
-- Implement caching for improved performance
+Centrus is provided under a commercial licence. For partnership or enterprise deployment enquiries, please contact the Centrus team.
 
-### 2. Assistant Management
-- Replace assistant objects with response configurations
-- Update model selection to support new models
-- Implement conversation-based instruction handling
-- Update file integration for new search capabilities
+---
 
-### 3. Thread Management
-- Replace thread creation with conversation management
-- Implement history and context preservation
-- Add support for built-in tool responses
-- Update user interface for enhanced conversation features
-
-## Migration Strategy
-
-### 1. Preparation Phase
-- Document existing functionality
-- Map current features to new API capabilities
-- Create test environments for API exploration
-
-### 2. Implementation Phase
-- Develop core response methods
-- Implement conversation management
-- Add file and web search integration
-- Update database schema
-
-### 3. Testing Phase
-- Validate response quality and format
-- Test conversation persistence
-- Verify tool functionality
-- Performance testing
-
-### 4. Deployment Phase
-- Staged rollout to production
-- Monitoring and logging
-- User feedback collection
+*Last updated: 29/04/2024*
